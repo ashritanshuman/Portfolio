@@ -47,13 +47,6 @@ npm run build
 
 Static files are exported to the `dist/` directory.
 
-## Project Structure
-
-- `src/app/` — Next.js app entry and global styles.
-- `src/components/desktop/` — Desktop context, window manager, dock, top panel, activities overview, and related UI.
-- `src/components/apps/` — Individual application components (Terminal, VS Code, Files, etc.).
-- `src/lib/` — Portfolio data and app configurations.
-- `src/hooks/` — Custom hooks, including sound effects.
 
 ## License
 
