@@ -51,4 +51,3 @@ Static files are exported to the `dist/` directory.
 ## License
 
 MIT — feel free to fork and customize for your own portfolio.
-# Portfolio
