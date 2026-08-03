@@ -2,8 +2,6 @@
 
 An immersive, fully interactive personal portfolio that recreates the Ubuntu Desktop (GNOME) experience in the browser.
 
-Built with **Next.js**, **React**, **TypeScript**, **Tailwind CSS**, **Framer Motion**, **Shadcn/UI**, and **Lucide React**.
-
 ## Features
 
 - **Ubuntu Desktop Environment** — Yaru-inspired wallpaper, glass panels, dock, top bar, desktop icons, and workspace indicators.
