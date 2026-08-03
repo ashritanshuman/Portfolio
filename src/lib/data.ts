@@ -140,8 +140,8 @@ export const DESKTOP_ICONS: DesktopIcon[] = [
   { id: "projects", appId: "projects", label: "Projects", x: 24, y: 104 },
   { id: "resume", appId: "resume", label: "Resume.pdf", x: 24, y: 184 },
   { id: "contact", appId: "contact", label: "Contact", x: 24, y: 264 },
-  { id: "github", appId: "browser", label: "GitHub", x: 24, y: 344, url: "https://github.com/ashrit" },
-  { id: "linkedin", appId: "browser", label: "LinkedIn", x: 24, y: 424, url: "https://linkedin.com/in/ashrit" },
+  { id: "github", appId: "browser", label: "GitHub", x: 24, y: 344, url: "https://github.com/ashritanshuman" },
+  { id: "linkedin", appId: "browser", label: "LinkedIn", x: 24, y: 424, url: "https://linkedin.com/in/ashritanshuman/" },
   { id: "trash", appId: "trash", label: "Trash", x: 24, y: 504 },
 ];
 
@@ -160,137 +160,101 @@ export const DOCK_APPS: AppId[] = [
 ];
 
 export const SKILL_METRICS: SkillMetric[] = [
-  { label: "CPU Usage", value: 92, color: "#e95420", usage: 78 },
-  { label: "RAM Usage", value: 85, color: "#772953", usage: 82 },
-  { label: "GPU Usage", value: 76, color: "#2c001e", usage: 91 },
-  { label: "Storage", value: 64, color: "#5e2750", usage: 45 },
-  { label: "Network", value: 88, color: "#aea79f", usage: 73 },
+  { label: "CPU Usage", value: 95, color: "#e95420", usage: 88 },
+  { label: "RAM Usage", value: 90, color: "#772953", usage: 84 },
+  { label: "GPU Usage", value: 86, color: "#2c001e", usage: 80 },
+  { label: "Storage", value: 82, color: "#5e2750", usage: 75 },
+  { label: "Network", value: 88, color: "#aea79f", usage: 82 },
 ];
 
 export const SKILL_MAP: Record<string, string> = {
-  "CPU Usage": "Python",
-  "RAM Usage": "Machine Learning",
-  "GPU Usage": "Deep Learning",
-  Storage: "Databases",
-  Network: "APIs",
+  "CPU Usage": "Python, Java, JavaScript, SQL",
+  "RAM Usage": "React.js, Tailwind CSS, HTML/JS",
+  "GPU Usage": "OpenRouter AI, NumPy, Pandas",
+  Storage: "MongoDB, Firebase, Express.js",
+  Network: "Git, GitHub, Docker, Linux",
 };
 
 export const PROJECTS: Project[] = [
   {
-    id: "ai-1",
-    name: "Neural Vision",
-    description: "Real-time object detection using YOLO and TensorFlow.",
-    tech: ["Python", "TensorFlow", "OpenCV"],
-    github: "https://github.com/ashrit/neural-vision",
+    id: "skillora-ai",
+    name: "Skillora AI – AI-Powered Resume Builder",
+    description: "AI-powered resume-building platform enabling users to create structured, professional resumes with dynamic customization, real-time preview, and AI content generation.",
+    tech: ["React.js", "Tailwind CSS", "OpenRouter AI API Integration"],
+    link: "https://skilloraai.vercel.app/",
+    github: "https://github.com/ashritanshuman/skillora-ai",
     folder: "AI",
   },
   {
-    id: "ai-2",
-    name: "NLP Assistant",
-    description: "Conversational AI assistant powered by transformers.",
-    tech: ["PyTorch", "Hugging Face", "FastAPI"],
-    github: "https://github.com/ashrit/nlp-assistant",
-    folder: "AI",
-  },
-  {
-    id: "ml-1",
-    name: "Churn Predictor",
-    description: "Customer churn prediction model with 94% accuracy.",
-    tech: ["Scikit-learn", "Pandas", "XGBoost"],
-    github: "https://github.com/ashrit/churn-predictor",
-    folder: "Machine Learning",
-  },
-  {
-    id: "ml-2",
-    name: "Recommender Engine",
-    description: "Collaborative filtering recommendation engine.",
-    tech: ["Python", "Surprise", "Redis"],
-    github: "https://github.com/ashrit/recommender-engine",
-    folder: "Machine Learning",
-  },
-  {
-    id: "ds-1",
-    name: "Sales Dashboard",
-    description: "Interactive sales analytics dashboard.",
-    tech: ["Python", "Plotly", "Dash"],
-    github: "https://github.com/ashrit/sales-dashboard",
-    folder: "Data Science",
-  },
-  {
-    id: "ds-2",
-    name: "Sentiment Analyzer",
-    description: "Twitter sentiment analysis pipeline.",
-    tech: ["Python", "NLTK", "Airflow"],
-    github: "https://github.com/ashrit/sentiment-analyzer",
-    folder: "Data Science",
-  },
-  {
-    id: "web-1",
-    name: "Portfolio OS",
-    description: "This Ubuntu-inspired portfolio website.",
-    tech: ["Next.js", "React", "Tailwind CSS"],
-    github: "https://github.com/ashrit/portfolio-os",
+    id: "pathgen",
+    name: "PathGen - Skills Roadmap Generator",
+    description: "AI-powered learning roadmap platform that generates structured, personalized learning paths for technical skills and career roles with stage-by-stage curated resources.",
+    tech: ["HTML", "Tailwind CSS", "JavaScript"],
+    link: "https://ashritanshuman.github.io/skill-roadmap-generator/",
+    github: "https://github.com/ashritanshuman/skill-roadmap-generator",
     folder: "Web Development",
   },
   {
-    id: "web-2",
-    name: "E-commerce UI",
-    description: "Modern e-commerce storefront UI.",
-    tech: ["React", "TypeScript", "Shadcn"],
-    github: "https://github.com/ashrit/ecommerce-ui",
+    id: "sgf-phoenix",
+    name: "Study Group Finder",
+    description: "Full-stack student collaboration platform to discover and connect with study groups based on shared academic interests, featuring secure auth and real-time cloud data.",
+    tech: ["React.js", "Tailwind CSS", "Firebase"],
+    link: "https://sgfphoneix.vercel.app/",
+    github: "https://github.com/ashritanshuman/study-group-finder",
+    folder: "Full Stack",
+  },
+  {
+    id: "sih-alumni",
+    name: "Digital Alumni Data Management Platform",
+    description: "Alumni Data Management and Engagement Platform built as Team Lead during Smart India Hackathon 2025 at ITM University Gwalior.",
+    tech: ["React.js", "Tailwind CSS", "Express.js", "MongoDB"],
+    github: "https://github.com/ashritanshuman/alumni-platform",
+    folder: "Hackathons",
+  },
+  {
+    id: "ubuntu-portfolio",
+    name: "Ubuntu Portfolio OS",
+    description: "Interactive desktop environment portfolio simulating Ubuntu Linux built with Next.js, React, Tailwind CSS, and Framer Motion.",
+    tech: ["Next.js", "React.js", "Tailwind CSS", "TypeScript"],
+    link: "https://ashritanshuman.vercel.app",
+    github: "https://github.com/ashritanshuman/ubuntu-portfolio",
     folder: "Web Development",
-  },
-  {
-    id: "fs-1",
-    name: "Task Manager",
-    description: "Full-stack task management SaaS.",
-    tech: ["Next.js", "Prisma", "PostgreSQL"],
-    github: "https://github.com/ashrit/task-manager",
-    folder: "Full Stack",
-  },
-  {
-    id: "fs-2",
-    name: "Chat App",
-    description: "Real-time chat with WebSockets.",
-    tech: ["Node.js", "Socket.io", "MongoDB"],
-    github: "https://github.com/ashrit/chat-app",
-    folder: "Full Stack",
   },
 ];
 
-export const FOLDERS = [
-  "AI",
-  "Machine Learning",
-  "Data Science",
-  "Web Development",
+export const FOLDERS: ("AI" | "Web Development" | "Full Stack" | "Hackathons")[] = [
   "Full Stack",
+  "Web Development",
+  "AI",
+  "Hackathons",
 ];
 
 export const VSCODE_FILES: Record<string, { language: string; content: string }> = {
   "about.js": {
     language: "javascript",
     content: `const about = {
-  name: "Ashrit",
-  role: "Full Stack Developer & AI Enthusiast",
-  summary: \`
-    I build elegant, high-performance web applications and
-    intelligent systems that solve real-world problems.
-  \`,
-  education: [
-    "B.Tech in Computer Science",
-    "Specialization in AI/ML"
-  ],
-  interests: [
-    "Open Source",
-    "Distributed Systems",
-    "Human-Computer Interaction",
-    "Creative Coding"
-  ],
-  goals: [
-    "Ship products that millions love",
-    "Contribute to impactful OSS projects",
-    "Bridge design and engineering"
-  ]
+  name: "Ashrit Anshuman Pradhan",
+  location: "Gwalior, Madhya Pradesh, India",
+  role: "Full Stack Developer & Graphic Designer",
+  education: {
+    institution: "ITM University Gwalior",
+    degree: "Bachelor of Technology in Computer Science",
+    duration: "August 2025 -- September 2029"
+  },
+  experience: {
+    role: "Freelance Web Developer and Graphic Designer",
+    duration: "May 2025 -- Present",
+    highlights: [
+      "Delivered responsive, customized websites for 10+ local business clients",
+      "Completed graphic design & promotional projects for 20+ clients",
+      "Partnered with 3 schools for promotional event campaigns & creative outreach"
+    ]
+  },
+  leadership: {
+    event: "Smart India Hackathon (September 2025)",
+    role: "Team Lead (6-member team)",
+    project: "Digital Alumni Data Management and Engagement Platform"
+  }
 };
 
 export default about;`,
@@ -299,19 +263,27 @@ export default about;`,
     language: "javascript",
     content: `const projects = [
   {
-    name: "Portfolio OS",
-    stack: ["Next.js", "React", "Tailwind", "Framer Motion"],
-    description: "An Ubuntu desktop experience as a portfolio website."
+    name: "Skillora AI – AI-Powered Resume Builder",
+    stack: ["React.js", "Tailwind CSS", "OpenRouter AI API"],
+    live: "https://skilloraai.vercel.app/",
+    description: "Dynamic resume builder with real-time preview & AI content generation."
   },
   {
-    name: "Neural Vision",
-    stack: ["Python", "TensorFlow", "OpenCV"],
-    description: "Real-time object detection pipeline."
+    name: "PathGen - Skills Roadmap Generator",
+    stack: ["HTML", "Tailwind CSS", "JavaScript"],
+    live: "https://ashritanshuman.github.io/skill-roadmap-generator/",
+    description: "AI-powered personalized learning roadmap generator."
   },
   {
-    name: "Task Manager",
-    stack: ["Next.js", "Prisma", "PostgreSQL"],
-    description: "Full-stack SaaS for team productivity."
+    name: "Study Group Finder",
+    stack: ["React.js", "Tailwind CSS", "Firebase"],
+    live: "https://sgfphoneix.vercel.app/",
+    description: "Full-stack peer academic collaboration platform."
+  },
+  {
+    name: "Digital Alumni Management Platform",
+    stack: ["React.js", "Express.js", "MongoDB"],
+    description: "SIH 2025 Alumni networking & data management platform."
   }
 ];
 
@@ -320,12 +292,18 @@ export default projects;`,
   "skills.js": {
     language: "javascript",
     content: `const skills = {
-  languages: ["Python", "TypeScript", "JavaScript", "SQL", "Go"],
-  frameworks: ["Next.js", "React", "Node.js", "FastAPI", "Django"],
-  ml: ["TensorFlow", "PyTorch", "Scikit-learn", "Hugging Face"],
-  databases: ["PostgreSQL", "MongoDB", "Redis", "Supabase"],
-  devops: ["Docker", "Kubernetes", "GitHub Actions", "Azure"],
-  design: ["Figma", "Tailwind CSS", "Framer Motion"]
+  languages: ["Python", "Java", "JavaScript", "SQL"],
+  developerTools: ["Git", "GitHub", "VS Code", "Docker", "Linux"],
+  technologiesAndFrameworks: [
+    "React.js",
+    "Tailwind CSS",
+    "MongoDB",
+    "Express.js",
+    "Firebase",
+    "NumPy",
+    "Pandas",
+    "Matplotlib"
+  ]
 };
 
 export default skills;`,
@@ -333,16 +311,14 @@ export default skills;`,
   "contact.js": {
     language: "javascript",
     content: `const contact = {
-  email: "ashrit@portfolio.dev",
-  github: "github.com/ashrit",
-  linkedin: "linkedin.com/in/ashrit",
-  twitter: "x.com/ashrit",
-  availability: "Open to full-time and freelance opportunities",
-  preferred: [
-    "Frontend engineering roles",
-    "AI/ML product teams",
-    "Remote-first startups"
-  ]
+  name: "Ashrit Anshuman Pradhan",
+  email: "ashrit39@gmail.com",
+  phone: "+91 6370205656",
+  github: "https://github.com/ashritanshuman",
+  linkedin: "https://linkedin.com/in/ashritanshuman/",
+  portfolio: "https://ashritanshuman.vercel.app",
+  location: "Gwalior, Madhya Pradesh, India",
+  availability: "Open for freelance projects and technical opportunities"
 };
 
 export default contact;`,

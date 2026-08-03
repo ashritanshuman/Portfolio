@@ -66,7 +66,7 @@ export function SkillsApp() {
           <div className="bg-white/5 rounded-xl p-4 border border-white/10">
             <h3 className="text-sm font-medium mb-3 text-white/90">Core Stack</h3>
             <div className="flex flex-wrap gap-2">
-              {["Python", "TypeScript", "Next.js", "React", "Node.js", "PostgreSQL", "Docker", "TensorFlow", "PyTorch", "Tailwind CSS"].map((skill) => (
+              {["Python", "Java", "JavaScript", "SQL", "React.js", "Tailwind CSS", "MongoDB", "Express.js", "Firebase", "Docker", "Linux", "NumPy", "Pandas", "Matplotlib"].map((skill) => (
                 <span key={skill} className="px-2.5 py-1 rounded-md bg-white/10 text-xs text-white/80">
                   {skill}
                 </span>
@@ -77,10 +77,11 @@ export function SkillsApp() {
           <div className="bg-white/5 rounded-xl p-4 border border-white/10">
             <h3 className="text-sm font-medium mb-3 text-white/90">Process History</h3>
             <div className="space-y-2 text-xs text-white/70">
-              <div className="flex justify-between"><span>portfolio-os</span><span>12.4% CPU</span></div>
-              <div className="flex justify-between"><span>neural-vision</span><span>31.2% GPU</span></div>
-              <div className="flex justify-between"><span>churn-predictor</span><span>8.7% CPU</span></div>
-              <div className="flex justify-between"><span>recommender-engine</span><span>18.9% RAM</span></div>
+              <div className="flex justify-between"><span>skillora-ai</span><span>24.8% GPU</span></div>
+              <div className="flex justify-between"><span>skill-roadmap-gen</span><span>14.2% CPU</span></div>
+              <div className="flex justify-between"><span>study-group-finder</span><span>18.5% RAM</span></div>
+              <div className="flex justify-between"><span>sih-alumni-platform</span><span>12.1% CPU</span></div>
+              <div className="flex justify-between"><span>ubuntu-portfolio-os</span><span>10.4% RAM</span></div>
             </div>
           </div>
         </div>

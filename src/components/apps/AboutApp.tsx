@@ -10,35 +10,32 @@ const tabs = [
 ];
 
 const content: Record<string, string> = {
-  intro: `Hi, I'm Ashrit — a passionate developer who loves turning ideas into elegant, performant software.
+  intro: `Hi, I'm Ashrit Anshuman Pradhan — a Computer Science student, Web Developer, and Graphic Designer based in Gwalior, Madhya Pradesh, India.
 
-I enjoy working at the intersection of design, engineering, and artificial intelligence. Whether it's building a beautiful UI, training a model, or architecting a distributed system, I approach every challenge with curiosity and craftsmanship.
+I specialize in building full-stack web applications, AI-powered tools, and graphic design assets. From freelancing with 30+ clients and local schools to leading a 6-member team at Smart India Hackathon 2025, I focus on delivering user-centric digital experiences.
 
-This portfolio is a desktop environment because I believe the best interfaces are the ones that feel alive.`,
-  education: `B.Tech in Computer Science
-Specialization in Artificial Intelligence & Machine Learning
+This portfolio is an interactive Ubuntu desktop environment reflecting my passion for software engineering, modern web technologies, and clean design.`,
+  education: `ITM University Gwalior
+Bachelor of Technology in Computer Science (August 2025 – September 2029)
+Location: Gwalior, Madhya Pradesh, India
 
-Key coursework:
-• Data Structures & Algorithms
-• Deep Learning & Neural Networks
-• Database Management Systems
-• Computer Networks & Distributed Systems
-• Human-Computer Interaction`,
-  interests: `• Creative coding & generative design
-• Open-source tooling
-• Robotics & embedded systems
-• Music production & audio synthesis
-• Long-distance running & hiking
-• Science fiction & futurism`,
+Technical Focus & Skills:
+• Languages: Python, Java, JavaScript, SQL
+• Developer Tools: Git, GitHub, VS Code, Docker, Linux
+• Frameworks & Libraries: React.js, Tailwind CSS, Express.js, MongoDB, Firebase, NumPy, Pandas, Matplotlib`,
+  interests: `• Full-stack Web Development & AI Tools Integration
+• Peer Collaboration Platforms & Academic Tools
+• Graphic Design, Promotional Campaigns & Branding
+• Hackathons & Technical Team Leadership
+• Open-Source Software & Linux Ecosystems`,
   goals: `Short-term:
-• Ship a product used by thousands of people
-• Contribute meaningfully to open-source projects
-• Speak at a technical conference
+• Expand Skillora AI and PathGen with broader user capabilities
+• Ship innovative full-stack solutions for client & community needs
+• Contribute actively to open-source developer toolkits
 
 Long-term:
-• Build technology that democratizes AI
-• Lead a team that values craft and inclusion
-• Explore the intersection of AI and creativity`,
+• Engineer scalable AI-driven platforms that solve complex real-world challenges
+• Lead high-impact engineering teams in fast-paced software environments`,
 };
 
 export function AboutApp() {

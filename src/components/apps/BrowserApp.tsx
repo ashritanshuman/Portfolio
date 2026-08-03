@@ -13,16 +13,15 @@ function GitHubIcon({ className }: { className?: string }) {
 }
 
 const REPOS = [
-  { name: "portfolio-os", desc: "Ubuntu desktop portfolio website", stars: 142, lang: "TypeScript" },
-  { name: "neural-vision", desc: "Real-time object detection", stars: 89, lang: "Python" },
-  { name: "task-manager", desc: "Full-stack SaaS for teams", stars: 67, lang: "TypeScript" },
-  { name: "churn-predictor", desc: "Customer churn prediction", stars: 45, lang: "Python" },
-  { name: "recommender-engine", desc: "Collaborative filtering engine", stars: 38, lang: "Python" },
-  { name: "sales-dashboard", desc: "Interactive analytics dashboard", stars: 54, lang: "Python" },
+  { name: "skillora-ai", desc: "Skillora AI – AI-Powered Resume Builder with real-time preview", url: "https://skilloraai.vercel.app/", repoUrl: "https://github.com/ashritanshuman/skillora-ai", stars: 28, lang: "JavaScript" },
+  { name: "skill-roadmap-generator", desc: "PathGen – AI-powered personalized learning roadmap platform", url: "https://ashritanshuman.github.io/skill-roadmap-generator/", repoUrl: "https://github.com/ashritanshuman/skill-roadmap-generator", stars: 35, lang: "JavaScript" },
+  { name: "study-group-finder", desc: "Study Group Finder – Student peer collaboration platform", url: "https://sgfphoneix.vercel.app/", repoUrl: "https://github.com/ashritanshuman/study-group-finder", stars: 19, lang: "JavaScript" },
+  { name: "alumni-platform", desc: "Digital Alumni Data Management & Engagement Platform (SIH 2025)", repoUrl: "https://github.com/ashritanshuman/alumni-platform", stars: 14, lang: "JavaScript" },
+  { name: "ubuntu-portfolio", desc: "Ubuntu Desktop OS Portfolio built with Next.js & React", url: "https://ashritanshuman.vercel.app", repoUrl: "https://github.com/ashritanshuman/ubuntu-portfolio", stars: 42, lang: "TypeScript" },
 ];
 
 export function BrowserApp() {
-  const [url, setUrl] = useState("https://github.com/ashrit");
+  const [url, setUrl] = useState("https://github.com/ashritanshuman");
   const [activeTab, setActiveTab] = useState("github");
 
   return (
@@ -60,9 +59,9 @@ export function BrowserApp() {
         <div className="flex-1 bg-[#181825] rounded-lg h-8 px-3 flex items-center text-sm text-white/80 border border-white/10">
           {url}
         </div>
-        <button className="p-1.5 rounded hover:bg-white/10 text-white/60">
+        <a href={url} target="_blank" rel="noreferrer" className="p-1.5 rounded hover:bg-white/10 text-white/60">
           <ExternalLink className="w-4 h-4" />
-        </button>
+        </a>
       </div>
 
       {/* Content */}
@@ -80,38 +79,55 @@ export function BrowserApp() {
                 <GitHubIcon className="w-10 h-10 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">ashrit</h1>
-                <p className="text-white/60">Full Stack Developer & AI Enthusiast</p>
+                <h1 className="text-2xl font-bold">ashritanshuman</h1>
+                <p className="text-white/60">Full Stack Developer & Graphic Designer | B.Tech CS @ ITM University Gwalior</p>
                 <div className="flex gap-4 mt-2 text-sm text-white/60">
-                  <span>12 repositories</span>
-                  <span>1.2k followers</span>
-                  <span>321 following</span>
+                  <span>5 pinned repositories</span>
+                  <span>Gwalior, India</span>
                 </div>
               </div>
             </div>
 
-            <h2 className="text-lg font-semibold mb-4">Popular Repositories</h2>
+            <h2 className="text-lg font-semibold mb-4">Popular Repositories & Deployments</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {REPOS.map((repo) => (
-                <a
+                <div
                   key={repo.name}
-                  href={`https://github.com/ashrit/${repo.name}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block p-4 rounded-xl bg-[#181825] border border-white/10 hover:border-white/20 transition-colors"
+                  className="p-4 rounded-xl bg-[#181825] border border-white/10 hover:border-white/20 transition-colors flex flex-col justify-between"
                 >
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-semibold text-[#58a6ff]">{repo.name}</h3>
-                    <span className="flex items-center gap-1 text-xs text-white/60">
-                      <Star className="w-3 h-3" /> {repo.stars}
-                    </span>
+                  <div>
+                    <div className="flex justify-between items-start">
+                      <a
+                        href={repo.repoUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-semibold text-[#58a6ff] hover:underline"
+                      >
+                        {repo.name}
+                      </a>
+                      <span className="flex items-center gap-1 text-xs text-white/60">
+                        <Star className="w-3 h-3 text-yellow-400" /> {repo.stars}
+                      </span>
+                    </div>
+                    <p className="text-sm text-white/60 mt-1">{repo.desc}</p>
                   </div>
-                  <p className="text-sm text-white/60 mt-1">{repo.desc}</p>
-                  <div className="flex items-center gap-2 mt-3 text-xs text-white/50">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#e95420]" />
-                    {repo.lang}
+                  <div className="flex items-center justify-between mt-4 text-xs">
+                    <div className="flex items-center gap-2 text-white/50">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#e95420]" />
+                      {repo.lang}
+                    </div>
+                    {repo.url && (
+                      <a
+                        href={repo.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 text-[#e95420] hover:underline font-medium"
+                      >
+                        Live Demo <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
                   </div>
-                </a>
+                </div>
               ))}
             </div>
           </motion.div>

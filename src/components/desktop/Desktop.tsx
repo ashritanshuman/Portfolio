@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDesktop } from "./DesktopContext";
 import { TopPanel } from "./TopPanel";
@@ -17,37 +17,10 @@ const WHEEL_WORKSPACE_ENABLED = false;
 export function Desktop() {
   const { windows, workspace, setWorkspace, activitiesOpen, setActivitiesOpen } = useDesktop();
   const [booted, setBooted] = useState(false);
-  const swipeStartX = useRef(0);
-  const swipeStartY = useRef(0);
 
   // Scroll gesture workspace activation is disabled to prevent accidental workspace/activities triggering while scrolling.
 
-  // Touch swipe workspace switching
-  useEffect(() => {
-    const onTouchStart = (e: TouchEvent) => {
-      swipeStartX.current = e.touches[0].clientX;
-      swipeStartY.current = e.touches[0].clientY;
-    };
-    const onTouchEnd = (e: TouchEvent) => {
-      const dx = e.changedTouches[0].clientX - swipeStartX.current;
-      const dy = e.changedTouches[0].clientY - swipeStartY.current;
-      if (activitiesOpen) {
-        if (dy > 80) setActivitiesOpen(false);
-        return;
-      }
-      if (Math.abs(dx) > 80) {
-        if (dx > 0) setWorkspace(workspace - 1);
-        else setWorkspace(workspace + 1);
-      }
-      if (dy < -100) setActivitiesOpen(true);
-    };
-    window.addEventListener("touchstart", onTouchStart, { passive: true });
-    window.addEventListener("touchend", onTouchEnd, { passive: true });
-    return () => {
-      window.removeEventListener("touchstart", onTouchStart);
-      window.removeEventListener("touchend", onTouchEnd);
-    };
-  }, [workspace, setWorkspace, activitiesOpen, setActivitiesOpen]);
+  // Touch swipe gesture workspace activation is disabled on phones and tablets.
 
   return (
     <>

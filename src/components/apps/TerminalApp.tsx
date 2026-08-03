@@ -36,12 +36,14 @@ const OUTPUT: Record<string, string[]> = {
     "  sudo hire-me  Send a hiring request",
   ],
   contact: [
-    "Email:   ashrit@portfolio.dev",
-    "GitHub:  github.com/ashrit",
-    "LinkedIn: linkedin.com/in/ashrit",
-    "Twitter: x.com/ashrit",
+    "Name:      Ashrit Anshuman Pradhan",
+    "Email:     ashrit39@gmail.com",
+    "Phone:     +91 6370205656",
+    "GitHub:    github.com/ashritanshuman",
+    "LinkedIn:  linkedin.com/in/ashritanshuman",
+    "Portfolio: ashritanshuman.vercel.app",
     "",
-    "Availability: Open to full-time and freelance opportunities.",
+    "Availability: Open for freelance projects and technical opportunities.",
   ],
   neofetch: [
     "        .-://+oo+/:.          ashrit@portfolio",
@@ -52,9 +54,9 @@ const OUTPUT: Record<string, string[]> = {
     "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy Shell: zsh",
     "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy DE: GNOME / Framer Motion",
     ":yyyyyyyyyyyyyyyyyyyyyyyyyyyy:  WM: Ubuntu Desktop",
-    " :yyyyyyyyyyyyyyyyyyyyyyyyyy:  CPU: Brain @ creativity-max",
-    "  :oyyyyyyyyyyyyyyyyyyyyyyo:   GPU: Imagination RTX",
-    "    .:/osyyyyyyyyyyyyso/-.     Memory: Infinite curiosity",
+    " :yyyyyyyyyyyyyyyyyyyyyyyyyy:  CPU: B.Tech CS @ ITM Gwalior",
+    "  :oyyyyyyyyyyyyyyyyyyyyyyo:   GPU: Skillora AI & PathGen",
+    "    .:/osyyyyyyyyyyyyso/-.     Memory: Python, React & Tailwind",
     "        .-://+oo+/:.          ",
   ],
   "sudo hire-me": [
@@ -113,10 +115,10 @@ export function TerminalApp() {
       openApp("resume");
       newLines.push({ type: "output", text: "Opening Document Viewer..." });
     } else if (cmd === "github") {
-      window.open("https://github.com/ashrit", "_blank");
+      window.open("https://github.com/ashritanshuman", "_blank");
       newLines.push({ type: "output", text: "Opening GitHub in browser..." });
     } else if (cmd === "linkedin") {
-      window.open("https://linkedin.com/in/ashrit", "_blank");
+      window.open("https://linkedin.com/in/ashritanshuman/", "_blank");
       newLines.push({ type: "output", text: "Opening LinkedIn in browser..." });
     } else if (cmd === "contact") {
       OUTPUT.contact.forEach((t) => newLines.push({ type: "output", text: t }));

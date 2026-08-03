@@ -55,7 +55,7 @@ export interface Project {
   tech: string[];
   link?: string;
   github?: string;
-  folder: "AI" | "Machine Learning" | "Data Science" | "Web Development" | "Full Stack";
+  folder: "AI" | "Web Development" | "Full Stack" | "Hackathons";
 }
 
 export interface SkillMetric {
