@@ -65,15 +65,25 @@ export function WindowFrame({ window: w, children, appId }: WindowFrameProps) {
 
   useEffect(() => {
     if (!isDragging) return;
+    let rafId = 0;
     const onMouseMove = (e: MouseEvent) => {
       const dx = e.clientX - dragStart.current.x;
       const dy = e.clientY - dragStart.current.y;
-      moveWindow(w.id, Math.max(0, dragStart.current.wx + dx), Math.max(28, dragStart.current.wy + dy));
+      // Throttle state updates to one per animation frame to avoid
+      // re-rendering the whole desktop tree more often than the display refreshes
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        moveWindow(w.id, Math.max(0, dragStart.current.wx + dx), Math.max(28, dragStart.current.wy + dy));
+      });
     };
-    const onMouseUp = () => setIsDragging(false);
+    const onMouseUp = () => {
+      cancelAnimationFrame(rafId);
+      setIsDragging(false);
+    };
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
     return () => {
+      cancelAnimationFrame(rafId);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
     };
@@ -132,11 +142,15 @@ export function WindowFrame({ window: w, children, appId }: WindowFrameProps) {
       {!w.minimized && w.workspace === workspace && (
         <motion.div
           ref={frameRef}
-          layout
+          layout={!isDragging}
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1, x: displayStyle.x, y: displayStyle.y, width: displayStyle.width, height: displayStyle.height }}
           exit={{ opacity: 0, scale: 0.9 }}
-          transition={{ type: "spring", stiffness: 400, damping: 30, mass: 0.8 }}
+          transition={
+            isDragging
+              ? { duration: 0 }
+              : { type: "spring", stiffness: 400, damping: 30, mass: 0.8 }
+          }
           onClick={handleFocus}
           onPointerDown={(e) => e.stopPropagation()}
           className={`fixed z-10 rounded-xl overflow-hidden glass-window flex flex-col ${

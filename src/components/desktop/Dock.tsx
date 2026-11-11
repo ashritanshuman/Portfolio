@@ -56,6 +56,7 @@ export function Dock() {
                 )}
               </AnimatePresence>
               <motion.button
+                data-dock-icon={appId}
                 onMouseEnter={() => setHovered(appId)}
                 onMouseLeave={() => setHovered(null)}
                 onClick={() => handleOpen(appId)}

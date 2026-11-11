@@ -1,0 +1,32 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# Next.js & Turbopack dev/build artifacts
+/.next/
+/dist/dev/
+/dist/cache/
+/dist/trace
+/dist/types/
+
+# TypeScript cache
+*.tsbuildinfo
+next-env.d.ts.bak
+
+# Testing & Coverage
+/coverage
+
+# Environment & local files
+.env*.local
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+*.pem
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
