@@ -33,7 +33,7 @@ const keyColor = "#9cdcfe";
 function highlight(line: string) {
   // Very simple syntax highlighter for demo
   const tokens: React.ReactElement[] = [];
-  let remaining = line;
+  const remaining = line;
   let key = 0;
 
   const push = (text: string, color?: string) => {

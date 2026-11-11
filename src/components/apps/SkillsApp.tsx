@@ -5,16 +5,14 @@ import { motion } from "framer-motion";
 import { SKILL_METRICS, SKILL_MAP } from "@/lib/data";
 
 function Bar({ label, value, color, usage }: { label: string; value: number; color: string; usage: number }) {
-  const [animated, setAnimated] = useState(0);
   const [currentUsage, setCurrentUsage] = useState(usage);
 
   useEffect(() => {
-    setAnimated(value);
     const interval = setInterval(() => {
       setCurrentUsage(Math.max(20, Math.min(98, usage + Math.floor(Math.random() * 21) - 10)));
     }, 1500);
     return () => clearInterval(interval);
-  }, [value, usage]);
+  }, [usage]);
 
   return (
     <div className="mb-5">
@@ -29,7 +27,7 @@ function Bar({ label, value, color, usage }: { label: string; value: number; col
       <div className="h-3 bg-white/10 rounded-full overflow-hidden">
         <motion.div
           initial={{ width: 0 }}
-          animate={{ width: `${animated}%` }}
+          animate={{ width: `${value}%` }}
           transition={{ duration: 1, ease: "easeOut" }}
           className="h-full rounded-full relative"
           style={{ backgroundColor: color }}
