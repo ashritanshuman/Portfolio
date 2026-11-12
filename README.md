@@ -1,4 +1,4 @@
-# Ubuntu OS Style Portfolio
+# Ubuntu OS Styled Portfolio
 
 An immersive, fully interactive personal portfolio that recreates the Ubuntu Desktop (GNOME) experience in the browser.
 
