@@ -146,23 +146,35 @@ export function DesktopProvider({ children }: { children: React.ReactNode }) {
   );
 
   const closeWindow = useCallback((id: string) => {
+    // Phase 1: mark the window as closing so it plays its exit animation,
+    // and hand focus to the next top window straight away.
     setWindows((prev) => {
-      const remaining = prev.filter((w) => w.id !== id);
-      const closed = prev.find((w) => w.id === id);
-      if (closed && closed.focused) {
-        const top = remaining
-          .filter((w) => !w.minimized && w.workspace === closed.workspace)
+      const target = prev.find((w) => w.id === id);
+      if (!target) return prev;
+      const others = prev.filter((w) => w.id !== id);
+      if (target.focused) {
+        const top = others
+          .filter((w) => !w.minimized && w.workspace === target.workspace)
           .sort((a, b) => b.zIndex - a.zIndex)[0];
         if (top) {
           setActiveWindowId(top.id);
-          return remaining.map((w) =>
-            w.id === top.id ? { ...w, focused: true } : w.focused ? { ...w, focused: false } : w
-          );
+          return prev.map((w) => {
+            if (w.id === id) return { ...w, closing: true, focused: false };
+            if (w.id === top.id) return { ...w, focused: true };
+            return w.focused ? { ...w, focused: false } : w;
+          });
         }
         setActiveWindowId(null);
       }
-      return remaining;
+      return prev.map((w) => (w.id === id ? { ...w, closing: true, focused: false } : w));
     });
+
+    // Phase 2: unmount once the exit transition has finished.
+    const timer = setTimeout(() => {
+      setWindows((prev) => prev.filter((w) => w.id !== id));
+    }, WINDOW_EXIT_MS + 30);
+
+    closeTimersRef.current.set(id, timer);
   }, []);
 
   const minimizeWindow = useCallback((id: string) => {

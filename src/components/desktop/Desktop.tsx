@@ -58,7 +58,7 @@ export function Desktop() {
     <MotionConfig reducedMotion="user">
       {!booted && <BootScreen onComplete={finishBoot} />}
       <div
-        className="fixed inset-0 overflow-hidden bg-[#14030f]"
+        className="fixed inset-0 overflow-hidden bg-[#0d0f11]"
         onClick={() => setActivitiesOpen(false)}
       >
         <TopPanel />
@@ -109,7 +109,7 @@ export function Desktop() {
         {/* ---------- Dim layer (derived from window state) ---------- */}
         <motion.div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-[120] bg-[#0b020a]"
+          className="pointer-events-none absolute inset-0 z-[120] bg-[#0a0c0e]"
           animate={{ opacity: desktopBlurred && !activitiesOpen ? 0.32 : 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
         />

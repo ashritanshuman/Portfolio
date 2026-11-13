@@ -228,11 +228,71 @@
   }
 
   .ubuntu-wallpaper {
-    background-color: #1a0510;
-    background-image: url("/assets/ubuntu-portfolio-wallpaper.png");
+    background-color: #0d0f11;
+    background-image: url("/assets/updates-wallpaper.webp");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
+  }
+
+  @media (max-width: 767px) {
+    .ubuntu-wallpaper {
+      background-image: url("/assets/updates-wallpaper-mobile.webp");
+      background-position: center top;
+    }
+  }
+
+  /* ---------- Window surface: entry / exit visuals ----------
+     Compositor-driven (opacity + transform only), so opening and closing
+     never wait on the main thread or on a requestAnimationFrame tick. */
+  @keyframes window-open {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes window-open-mobile {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .window-surface {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    transition:
+      opacity 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Entry runs once, when the window is mounted. */
+  .window-surface--enter {
+    animation: window-open 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .window-surface--enter-mobile {
+    animation: window-open-mobile 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Exit (minimize / close): a transition back to the resting state. */
+  .window-surface--hidden {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+
+  .window-surface--hidden-mobile {
+    opacity: 0;
+    transform: translateY(24px);
   }
 
   .window-titlebar {

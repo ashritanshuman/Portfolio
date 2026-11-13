@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { PreloadWallpaper } from "@/components/desktop/PreloadWallpaper";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -37,7 +38,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#2c001e",
+  themeColor: "#0d0f11",
 };
 
 export default function RootLayout({
@@ -50,7 +51,10 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
     >
-      <body className="h-full w-full overflow-hidden bg-black text-white">{children}</body>
+      <body className="h-full w-full overflow-hidden bg-[#0d0f11] text-white">
+        <PreloadWallpaper />
+        {children}
+      </body>
     </html>
   );
 }

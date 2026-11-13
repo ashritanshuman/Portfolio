@@ -34,6 +34,8 @@ export interface WindowState {
   height: number;
   minimized: boolean;
   maximized: boolean;
+  /** Set by closeWindow: the window is fading out and is removed afterwards. */
+  closing?: boolean;
   zIndex: number;
   workspace: number;
   focused: boolean;

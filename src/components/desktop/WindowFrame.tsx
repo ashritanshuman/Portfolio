@@ -32,8 +32,8 @@ const resizeHandles = [
   { dir: "sw", cursor: "sw-resize", class: "bottom-0 left-0 w-4 h-4" },
 ];
 
-/** Snappy, native-feeling window open/close timing. */
-const WINDOW_TRANSITION = { duration: 0.2, ease: [0.22, 1, 0.36, 1] as const };
+/** Window surface entry/exit timing, mirrored by the CSS keyframes. */
+const WINDOW_EXIT_MS = 200;
 
 export function WindowFrame({
   window: w,
@@ -257,7 +257,8 @@ export function WindowFrame({
   };
 
   const maximized = w.maximized;
-  // Minimized windows stay mounted (so app state survives) but animate out.
+  // Minimized and closing windows stay mounted (so app state survives
+  // minimize, and the exit animation plays during close) but animate out.
   const visible = !w.minimized && w.workspace === workspace;
 
   return (
@@ -296,21 +297,14 @@ export function WindowFrame({
         transition: visible ? undefined : "visibility 0s linear 0.2s",
       }}
     >
-      <motion.div
-        initial={mobile ? { opacity: 0, y: 24 } : { opacity: 0, scale: 0.97, y: 8 }}
-        animate={
-          visible
-            ? { opacity: 1, scale: 1, y: 0 }
-            : { opacity: 0, scale: mobile ? 1 : 0.97, y: mobile ? 24 : 8 }
-        }
-        exit={
-          mobile
-            ? { opacity: 0, y: 24, transition: { duration: 0.16, ease: "easeIn" } }
-            : { opacity: 0, scale: 0.97, y: 8, transition: { duration: 0.16, ease: "easeIn" } }
-        }
-        transition={mobile ? { type: "spring", stiffness: 340, damping: 34 } : WINDOW_TRANSITION}
+      <div
         className={cn(
-          "glass-window flex h-full w-full flex-col overflow-hidden",
+          "glass-window window-surface flex h-full w-full flex-col overflow-hidden",
+          // Entry animation plays once on mount.
+          mobile ? "window-surface--enter-mobile" : "window-surface--enter",
+          // Exit (minimize / close) is a transition, so it can be reversed
+          // instantly when the window is restored.
+          !visible && (mobile ? "window-surface--hidden-mobile" : "window-surface--hidden"),
           mobile
             ? "rounded-2xl ring-1 ring-white/15"
             : cn("rounded-xl", w.focused ? "ring-1 ring-white/20" : "ring-1 ring-white/5")
@@ -433,7 +427,7 @@ export function WindowFrame({
               onPointerDown={(e) => onResizePointerDown(e, h.dir)}
             />
           ))}
-      </motion.div>
+      </div>
     </motion.div>
   );
 }
