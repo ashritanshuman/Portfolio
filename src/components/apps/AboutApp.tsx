@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, Heart, Target, GraduationCap, User } from "lucide-react";
+import { Heart, Target, GraduationCap, User } from "lucide-react";
 
 const tabs = [
   { id: "intro", label: "Introduction", icon: User },
@@ -43,37 +43,38 @@ export function AboutApp() {
 
   return (
     <div className="h-full flex flex-col bg-gray-100 text-[#1e1e1e]">
-      <div className="flex border-b border-black/10 bg-white">
+      <div className="flex shrink-0 border-b border-black/10 bg-white overflow-x-auto no-scrollbar">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 px-4 py-2 text-sm border-r border-black/5 transition-colors ${
+              aria-pressed={activeTab === tab.id}
+              className={`flex shrink-0 items-center gap-1.5 px-3 sm:px-4 min-h-[44px] text-xs sm:text-sm border-r border-black/5 transition-colors ${
                 activeTab === tab.id ? "bg-[#e95420]/10 text-[#e95420]" : "hover:bg-black/5"
               }`}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-4 h-4" aria-hidden="true" />
               {tab.label}
             </button>
           );
         })}
       </div>
-      <div className="flex-1 p-6 overflow-auto">
+      <div className="flex-1 min-h-0 p-4 sm:p-6 overflow-y-auto app-scroll">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="max-w-2xl whitespace-pre-line leading-relaxed text-[15px]"
+            className="max-w-2xl whitespace-pre-line leading-relaxed text-sm sm:text-[15px] selectable"
           >
             {content[activeTab]}
           </motion.div>
         </AnimatePresence>
       </div>
-      <div className="px-4 py-2 text-xs text-black/40 border-t border-black/10 bg-white flex items-center justify-between">
+      <div className="shrink-0 px-3 sm:px-4 py-2 text-[11px] sm:text-xs text-black/40 border-t border-black/10 bg-white flex items-center justify-between">
         <span>UTF-8</span>
         <span>{tabs.find((t) => t.id === activeTab)?.label}</span>
       </div>

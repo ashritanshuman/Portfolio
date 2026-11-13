@@ -98,6 +98,20 @@
   --yaru-title: #3e3e3e;
   --yaru-terminal: #300a24;
   --yaru-vscode: #1e1e2e;
+
+  /* Responsive shell metrics */
+  --statusbar-h: 32px;
+  --dock-h: 64px;
+  --mobile-gutter: 8px;
+  --touch-target: 44px;
+}
+
+ @media (max-width: 767px) {
+  :root {
+    --statusbar-h: 40px;
+    --dock-h: 62px;
+    --mobile-gutter: 8px;
+  }
 }
 
 @layer base {
@@ -110,6 +124,22 @@
   body {
     @apply bg-background text-foreground select-none;
     font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  button,
+  a,
+  [role="button"],
+  input,
+  label {
+    touch-action: manipulation;
+  }
+  :focus-visible {
+    outline: 2px solid var(--yaru-orange);
+    outline-offset: 2px;
   }
   ::-webkit-scrollbar {
     width: 8px;
@@ -181,5 +211,69 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  /* Shell offsets that account for notches / home indicators */
+  .below-statusbar {
+    top: calc(var(--statusbar-h) + env(safe-area-inset-top, 0px));
+  }
+  .above-dock {
+    bottom: calc(var(--dock-h) + env(safe-area-inset-bottom, 0px));
+  }
+  .mobile-app-window {
+    top: calc(var(--statusbar-h) + env(safe-area-inset-top, 0px) + var(--mobile-gutter));
+    bottom: calc(var(--dock-h) + env(safe-area-inset-bottom, 0px) + var(--mobile-gutter));
+    left: var(--mobile-gutter);
+    right: var(--mobile-gutter);
+  }
+  .statusbar-safe {
+    height: calc(var(--statusbar-h) + env(safe-area-inset-top, 0px));
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .dock-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .app-scroll {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .selectable {
+    user-select: text;
+    -webkit-user-select: text;
+  }
+
+  /* Fade the top/bottom edges of scrollable launcher content */
+  .mask-fade-y {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
+  }
+}
+
+/* Keep the resume document readable on phones: ignore zoom transforms */
+@media (max-width: 639px) {
+  .resume-page {
+    transform: none !important;
+    width: 100% !important;
+    min-height: 0 !important;
+  }
+}
+
+/* Resize affordances only make sense for precise pointers */
+@media (hover: none) and (pointer: coarse) {
+  .window-resize-handle {
+    display: none;
+  }
+}
+
+/* On phones the desktop chrome is replaced by the mobile shell */
+@media (max-width: 767px) {
+  .desktop-only {
+    display: none !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .mobile-only {
+    display: none !important;
   }
 }

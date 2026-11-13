@@ -5,30 +5,8 @@ import { motion } from "framer-motion";
 import { VSCODE_FILES } from "@/lib/data";
 import { FileCode, FolderOpen, ChevronRight, FileJson } from "lucide-react";
 
-const syntaxColors: Record<string, string> = {
-  const: "#c586c0",
-  let: "#c586c0",
-  var: "#c586c0",
-  export: "#c586c0",
-  default: "#c586c0",
-  return: "#c586c0",
-  import: "#c586c0",
-  from: "#c586c0",
-  function: "#569cd6",
-  async: "#569cd6",
-  await: "#569cd6",
-  true: "#569cd6",
-  false: "#569cd6",
-  if: "#c586c0",
-  else: "#c586c0",
-  for: "#c586c0",
-  while: "#c586c0",
-};
-
 const stringColor = "#ce9178";
 const commentColor = "#6a9955";
-const numberColor = "#b5cea8";
-const keyColor = "#9cdcfe";
 
 function highlight(line: string) {
   // Very simple syntax highlighter for demo
@@ -71,24 +49,25 @@ export function VSCodeApp() {
   const file = VSCODE_FILES[activeFile];
 
   return (
-    <div className="h-full flex bg-[#1e1e2e] text-white code-font text-sm">
+    <div className="h-full flex flex-col sm:flex-row bg-[#1e1e2e] text-white code-font text-sm">
       {/* Explorer */}
-      <div className="w-56 bg-[#181825] border-r border-white/10 flex flex-col">
-        <div className="h-9 flex items-center px-3 text-xs font-semibold text-white/70 uppercase tracking-wider">
+      <div className="w-full sm:w-56 shrink-0 bg-[#181825] border-b sm:border-b-0 sm:border-r border-white/10 flex flex-col">
+        <div className="hidden sm:flex h-9 items-center px-3 text-xs font-semibold text-white/70 uppercase tracking-wider">
           Explorer
         </div>
-        <div className="px-2">
-          <div className="flex items-center gap-1 px-2 py-1 text-white/90">
+        <div className="px-2 py-1.5 sm:py-0 min-w-0">
+          <div className="hidden sm:flex items-center gap-1 px-2 py-1 text-white/90">
             <ChevronRight className="w-3.5 h-3.5" />
             <FolderOpen className="w-4 h-4 text-[#e95420]" />
             <span className="font-medium">portfolio</span>
           </div>
-          <div className="pl-4">
+          <div className="flex sm:block gap-1 pl-0 sm:pl-4 overflow-x-auto no-scrollbar">
             {Object.keys(VSCODE_FILES).map((name) => (
               <button
                 key={name}
                 onClick={() => setActiveFile(name)}
-                className={`w-full flex items-center gap-2 px-2 py-1 text-sm transition-colors ${
+                aria-pressed={activeFile === name}
+                className={`shrink-0 sm:w-full flex items-center gap-2 px-2 min-h-[36px] sm:min-h-0 sm:py-1 rounded sm:rounded-none text-xs sm:text-sm whitespace-nowrap transition-colors ${
                   activeFile === name ? "bg-white/10 text-white" : "text-white/60 hover:text-white"
                 }`}
               >
@@ -101,14 +80,14 @@ export function VSCodeApp() {
       </div>
 
       {/* Editor */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
         {/* Tabs */}
-        <div className="flex bg-[#181825] h-9 overflow-x-auto no-scrollbar">
+        <div className="flex bg-[#181825] h-10 sm:h-9 overflow-x-auto no-scrollbar shrink-0">
           {Object.keys(VSCODE_FILES).map((name) => (
             <button
               key={name}
               onClick={() => setActiveFile(name)}
-              className={`flex items-center gap-2 px-3 text-sm border-t-2 min-w-fit ${
+              className={`flex items-center gap-2 px-3 text-xs sm:text-sm border-t-2 min-w-fit ${
                 activeFile === name
                   ? "bg-[#1e1e2e] text-white border-[#e95420]"
                   : "text-white/50 border-transparent hover:bg-white/5"
@@ -121,14 +100,14 @@ export function VSCodeApp() {
         </div>
 
         {/* Breadcrumb */}
-        <div className="h-7 flex items-center px-3 text-xs text-white/50 bg-[#1e1e2e] border-b border-white/5">
+        <div className="hidden sm:flex h-7 items-center px-3 text-xs text-white/50 bg-[#1e1e2e] border-b border-white/5">
           portfolio <ChevronRight className="w-3 h-3 mx-1" /> src <ChevronRight className="w-3 h-3 mx-1" /> {activeFile}
         </div>
 
         {/* Code area */}
-        <div className="flex-1 overflow-auto p-4">
-          <div className="flex">
-            <div className="pr-4 text-right text-white/30 select-none min-w-[2rem]">
+        <div className="flex-1 min-h-0 overflow-auto app-scroll p-3 sm:p-4 text-[11px] leading-5 sm:text-sm sm:leading-normal">
+          <div className="flex min-w-fit">
+            <div className="pr-3 sm:pr-4 text-right text-white/30 select-none min-w-[2rem] sticky left-0 bg-[#1e1e2e]">
               {file.content.split("\n").map((_, i) => (
                 <div key={i}>{i + 1}</div>
               ))}
@@ -149,15 +128,15 @@ export function VSCodeApp() {
         </div>
 
         {/* Status bar */}
-        <div className="h-6 bg-[#007acc] text-white text-xs flex items-center px-3 justify-between">
-          <div className="flex gap-3">
+        <div className="h-6 shrink-0 bg-[#007acc] text-white text-[10px] sm:text-xs flex items-center px-2 sm:px-3 justify-between">
+          <div className="flex gap-2 sm:gap-3">
             <span>master*</span>
             <span className="flex items-center gap-1"><FileJson className="w-3 h-3" /> {file.language}</span>
           </div>
-          <div className="flex gap-3">
-            <span>Ln 1, Col 1</span>
+          <div className="flex gap-2 sm:gap-3">
+            <span className="hidden sm:inline">Ln 1, Col 1</span>
             <span>UTF-8</span>
-            <span>Prettier</span>
+            <span className="hidden sm:inline">Prettier</span>
           </div>
         </div>
       </div>

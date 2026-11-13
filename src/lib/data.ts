@@ -27,7 +27,7 @@ export const APPS: Record<string, AppConfig> = {
   },
   projects: {
     id: "projects",
-    title: "Files",
+    title: "Projects",
     icon: "FolderOpen",
     color: "#f4f4f4",
     width: 800,
@@ -51,7 +51,7 @@ export const APPS: Record<string, AppConfig> = {
   },
   contact: {
     id: "contact",
-    title: "Terminal",
+    title: "Contact",
     icon: "Terminal",
     color: "#300a24",
     width: 700,

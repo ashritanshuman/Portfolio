@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect, KeyboardEvent } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useDesktop } from "../desktop/DesktopContext";
 import { useSound } from "@/hooks/useSound";
 
@@ -168,33 +167,42 @@ export function TerminalApp() {
 
   return (
     <div className="h-full flex flex-col bg-[#300a24] text-white terminal-text">
-      <div ref={scrollRef} className="flex-1 overflow-auto p-4 text-sm">
+      <div
+        ref={scrollRef}
+        className="flex-1 min-h-0 overflow-y-auto app-scroll p-3 sm:p-4 text-xs sm:text-sm"
+        role="log"
+        aria-live="polite"
+        aria-label="Terminal output"
+      >
         {lines.map((line, i) =>
           line.type === "input" ? (
-            <div key={i} className="text-white/90">
+            <div key={i} className="text-white/90 break-words">
               <span className="text-[#8ae234] font-bold">ashrit@portfolio</span>
               <span className="text-white/70">:</span>
               <span className="text-[#729fcf]">~</span>
               <span className="text-white/70">$</span> {line.text.replace("ashrit@portfolio:~$ ", "")}
             </div>
           ) : (
-            <div key={i} className="text-white/80 whitespace-pre-wrap">
+            <div key={i} className="text-white/80 whitespace-pre-wrap break-words">
               {line.text}
             </div>
           )
         )}
         <div className="flex items-center gap-1 mt-1">
-          <span className="text-[#8ae234] font-bold">ashrit@portfolio</span>
-          <span className="text-white/70">:</span>
-          <span className="text-[#729fcf]">~</span>
-          <span className="text-white/70">$</span>
+          <span className="text-[#8ae234] font-bold shrink-0">ashrit@portfolio</span>
+          <span className="text-white/70 shrink-0">:</span>
+          <span className="text-[#729fcf] shrink-0">~</span>
+          <span className="text-white/70 shrink-0">$</span>
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
-            className="flex-1 bg-transparent outline-none text-white/90 ml-1 caret-white"
+            className="flex-1 min-w-0 bg-transparent outline-none text-base sm:text-sm text-white/90 ml-1 caret-white"
             autoFocus
             spellCheck={false}
+            autoCapitalize="none"
+            autoCorrect="off"
+            autoComplete="off"
             aria-label="Terminal input"
           />
         </div>

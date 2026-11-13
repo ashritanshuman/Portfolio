@@ -9,54 +9,64 @@ export function ResumeApp() {
   return (
     <div className="h-full flex flex-col bg-gray-100 text-[#1e1e1e]">
       {/* Toolbar */}
-      <div className="h-12 bg-white border-b border-black/10 flex items-center justify-between px-4">
-        <div className="flex items-center gap-2">
-          <button className="p-2 rounded hover:bg-black/5" onClick={() => setScale((s) => Math.max(0.5, s - 0.1))}>
-            <ZoomOut className="w-4 h-4" />
+      <div className="shrink-0 min-h-12 bg-white border-b border-black/10 flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 py-1.5">
+        <div className="hidden sm:flex items-center gap-1 sm:gap-2">
+          <button
+            className="h-9 w-9 flex items-center justify-center rounded hover:bg-black/5 active:bg-black/10"
+            onClick={() => setScale((s) => Math.max(0.5, s - 0.1))}
+            aria-label="Zoom out"
+          >
+            <ZoomOut className="w-4 h-4" aria-hidden="true" />
           </button>
-          <span className="text-sm text-black/60 min-w-[3rem] text-center">{Math.round(scale * 100)}%</span>
-          <button className="p-2 rounded hover:bg-black/5" onClick={() => setScale((s) => Math.min(2, s + 0.1))}>
-            <ZoomIn className="w-4 h-4" />
+          <span className="text-xs sm:text-sm text-black/60 min-w-[3rem] text-center">
+            {Math.round(scale * 100)}%
+          </span>
+          <button
+            className="h-9 w-9 flex items-center justify-center rounded hover:bg-black/5 active:bg-black/10"
+            onClick={() => setScale((s) => Math.min(2, s + 0.1))}
+            aria-label="Zoom in"
+          >
+            <ZoomIn className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
         <div className="flex items-center gap-2">
           <a
             href="/resume.pdf"
             download="ashrit_anshuman_resume.pdf"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#e95420] text-white text-sm hover:bg-[#d14b1b] transition-colors"
+            className="flex items-center gap-1.5 px-3 min-h-[36px] rounded-md bg-[#e95420] text-white text-xs sm:text-sm hover:bg-[#d14b1b] active:bg-[#bd4317] transition-colors"
           >
-            <Download className="w-4 h-4" /> Download PDF
+            <Download className="w-4 h-4" aria-hidden="true" /> Download PDF
           </a>
         </div>
       </div>
 
       {/* Document preview */}
-      <div className="flex-1 overflow-auto p-4 sm:p-8 bg-[#e0e0e0] flex justify-center items-start">
+      <div className="flex-1 min-h-0 overflow-auto app-scroll p-3 sm:p-8 bg-[#e0e0e0] flex justify-center items-start">
         <div
-          className="bg-white shadow-2xl p-6 sm:p-10 w-full max-w-[210mm] min-h-[297mm] h-fit shrink-0 my-2 mb-12 origin-top transition-transform text-[#1e1e1e] font-sans rounded-sm"
+          className="resume-page bg-white shadow-2xl p-4 sm:p-10 w-full max-w-[210mm] min-h-0 sm:min-h-[297mm] h-fit shrink-0 my-2 mb-12 origin-top transition-transform text-[#1e1e1e] font-sans rounded-sm selectable"
           style={{ transform: scale !== 1 ? `scale(${scale})` : undefined }}
         >
           {/* Header */}
           <div className="text-center border-b pb-4 mb-6">
-            <h1 className="text-3xl font-extrabold uppercase tracking-wide text-[#1e1e1e]">
+            <h1 className="text-xl sm:text-3xl font-extrabold uppercase tracking-wide text-[#1e1e1e] break-words">
               ashrit anshuman pradhan
             </h1>
             <p className="text-sm text-black/70 mt-1">Gwalior, Madhya Pradesh, India</p>
-            <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-black/80 mt-2 font-medium">
+            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] sm:text-xs text-black/80 mt-2 font-medium break-words">
               <span>+91 6370205656</span>
-              <span>|</span>
+              <span aria-hidden="true" className="hidden sm:inline">|</span>
               <a href="mailto:ashrit39@gmail.com" className="text-[#e95420] hover:underline">
                 ashrit39@gmail.com
               </a>
-              <span>|</span>
+              <span aria-hidden="true" className="hidden sm:inline">|</span>
               <a href="https://linkedin.com/in/ashritanshuman/" target="_blank" rel="noreferrer" className="text-[#e95420] hover:underline">
                 linkedin.com/in/ashritanshuman
               </a>
-              <span>|</span>
+              <span aria-hidden="true" className="hidden sm:inline">|</span>
               <a href="https://github.com/ashritanshuman" target="_blank" rel="noreferrer" className="text-[#e95420] hover:underline">
                 github.com/ashritanshuman
               </a>
-              <span>|</span>
+              <span aria-hidden="true" className="hidden sm:inline">|</span>
               <a href="https://ashritanshuman.vercel.app" target="_blank" rel="noreferrer" className="text-[#e95420] hover:underline">
                 Portfolio
               </a>
@@ -69,11 +79,11 @@ export function ResumeApp() {
               <h2 className="text-base font-bold uppercase tracking-wider text-[#1e1e1e] border-b border-black/20 pb-1 mb-2">
                 Education
               </h2>
-              <div className="flex justify-between items-baseline font-semibold">
+              <div className="flex flex-wrap justify-between items-baseline gap-x-3 gap-y-0.5 font-semibold">
                 <span>ITM University Gwalior</span>
                 <span className="text-xs text-black/60 font-normal">August 2025 -- September 2029</span>
               </div>
-              <div className="flex justify-between items-baseline text-xs italic text-black/80">
+              <div className="flex flex-wrap justify-between items-baseline gap-x-3 gap-y-0.5 text-xs italic text-black/80">
                 <span>Bachelor of Technology in Computer Science</span>
                 <span>Gwalior, MP</span>
               </div>
@@ -103,7 +113,7 @@ export function ResumeApp() {
                 Experience
               </h2>
               <div>
-                <div className="flex justify-between items-baseline font-semibold">
+                <div className="flex flex-wrap justify-between items-baseline gap-x-3 gap-y-0.5 font-semibold">
                   <span>Freelancer</span>
                   <span className="text-xs text-black/60 font-normal">May 2025 -- Present</span>
                 </div>
@@ -124,7 +134,7 @@ export function ResumeApp() {
               <div className="space-y-4">
                 {/* 1. Study Group Finder */}
                 <div>
-                  <div className="flex justify-between items-baseline">
+                  <div className="flex flex-wrap justify-between items-baseline gap-x-3 gap-y-0.5">
                     <span className="font-semibold flex items-center gap-1.5 flex-wrap">
                       <a href="https://sgfphoneix.vercel.app/" target="_blank" rel="noreferrer" className="text-[#1e1e1e] hover:text-[#e95420] underline flex items-center gap-1 font-bold">
                         Study Group Finder <ExternalLink className="w-3 h-3 text-[#e95420]" />
@@ -143,7 +153,7 @@ export function ResumeApp() {
 
                 {/* 2. PathGen - Skills Roadmap Generator */}
                 <div>
-                  <div className="flex justify-between items-baseline">
+                  <div className="flex flex-wrap justify-between items-baseline gap-x-3 gap-y-0.5">
                     <span className="font-semibold flex items-center gap-1.5 flex-wrap">
                       <a href="https://ashritanshuman.github.io/skill-roadmap-generator/" target="_blank" rel="noreferrer" className="text-[#1e1e1e] hover:text-[#e95420] underline flex items-center gap-1 font-bold">
                         PathGen - Skills Roadmap Generator <ExternalLink className="w-3 h-3 text-[#e95420]" />
@@ -161,7 +171,7 @@ export function ResumeApp() {
 
                 {/* 3. Skillora AI – AI-Powered Resume Builder */}
                 <div>
-                  <div className="flex justify-between items-baseline">
+                  <div className="flex flex-wrap justify-between items-baseline gap-x-3 gap-y-0.5">
                     <span className="font-semibold flex items-center gap-1.5 flex-wrap">
                       <a href="https://skilloraai.vercel.app/" target="_blank" rel="noreferrer" className="text-[#1e1e1e] hover:text-[#e95420] underline flex items-center gap-1 font-bold">
                         Skillora AI – AI-Powered Resume Builder <ExternalLink className="w-3 h-3 text-[#e95420]" />
@@ -185,7 +195,7 @@ export function ResumeApp() {
                 Leadership / Extracurricular
               </h2>
               <div>
-                <div className="flex justify-between items-baseline font-semibold">
+                <div className="flex flex-wrap justify-between items-baseline gap-x-3 gap-y-0.5 font-semibold">
                   <span>Smart India Hackathon</span>
                   <span className="text-xs text-black/60 font-normal">September 2025</span>
                 </div>

@@ -40,13 +40,17 @@ const DesktopContext = createContext<DesktopContextType | undefined>(undefined);
 
 const WORKSPACE_COUNT = 2;
 
+// Keep windows clear of the top panel and the dock.
+export const WINDOW_TOP_MARGIN = 40;
+export const WINDOW_BOTTOM_RESERVE = 96;
+
 function clampSize(width: number, height: number, minWidth: number, minHeight: number) {
   if (typeof window === "undefined") return { width, height };
-  const maxW = window.innerWidth - 32;
-  const maxH = window.innerHeight - 96;
+  const maxW = Math.max(240, window.innerWidth - 32);
+  const maxH = Math.max(200, window.innerHeight - WINDOW_TOP_MARGIN - WINDOW_BOTTOM_RESERVE);
   return {
-    width: Math.max(minWidth, Math.min(width, maxW)),
-    height: Math.max(minHeight, Math.min(height, maxH)),
+    width: Math.min(Math.max(width, Math.min(minWidth, maxW)), maxW),
+    height: Math.min(Math.max(height, Math.min(minHeight, maxH)), maxH),
   };
 }
 
@@ -55,8 +59,11 @@ function centerPosition(width: number, height: number, offset: number) {
   const maxW = window.innerWidth;
   const maxH = window.innerHeight;
   return {
-    x: Math.max(24, Math.min(maxW - width - 24, (maxW - width) / 2 + offset)),
-    y: Math.max(64, Math.min(maxH - height - 96, (maxH - height) / 2 + offset)),
+    x: Math.max(8, Math.min(maxW - width - 24, (maxW - width) / 2 + offset)),
+    y: Math.max(
+      WINDOW_TOP_MARGIN,
+      Math.min(maxH - height - WINDOW_BOTTOM_RESERVE, (maxH - height) / 2 + offset)
+    ),
   };
 }
 
@@ -235,6 +242,39 @@ export function DesktopProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [activitiesOpen, windows, workspace, activeWindowId, focusWindow]);
+
+  // Keep windows inside the viewport when the browser is resized or the
+  // device is rotated (phones/tablets switching orientation).
+  useEffect(() => {
+    let rafId = 0;
+    const onResize = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        setWindows((prev) =>
+          prev.map((w) => {
+            const maxW = Math.max(240, window.innerWidth - 32);
+            const maxH = Math.max(200, window.innerHeight - WINDOW_TOP_MARGIN - WINDOW_BOTTOM_RESERVE);
+            const width = Math.min(w.width, maxW);
+            const height = Math.min(w.height, maxH);
+            const x = Math.min(Math.max(8, w.x), Math.max(8, window.innerWidth - width - 16));
+            const y = Math.min(
+              Math.max(WINDOW_TOP_MARGIN, w.y),
+              Math.max(WINDOW_TOP_MARGIN, window.innerHeight - height - WINDOW_BOTTOM_RESERVE)
+            );
+            if (width === w.width && height === w.height && x === w.x && y === w.y) return w;
+            return { ...w, width, height, x, y };
+          })
+        );
+      });
+    };
+    window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onResize);
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+    };
+  }, []);
 
   return (
     <DesktopContext.Provider

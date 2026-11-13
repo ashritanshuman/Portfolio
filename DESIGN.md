@@ -30,12 +30,25 @@ The portfolio abandons the traditional vertical-scrolling website in favor of a 
 
 ## 2. Design Principles
 
-1. **Desktop-first, responsive second**: The primary experience is a desktop OS. On smaller screens, windows clamp to the viewport and the dock scales down.
+1. **Desktop-first, mobile-deliberate**: The primary experience is a desktop OS. Below 768px the same content is presented as a touch-first shell (status bar, home grid, bottom dock, full-height app panels) rather than a shrunken desktop.
 2. **Window as the atomic unit**: Every application is rendered inside a `WindowFrame` managed by a central window manager.
 3. **Global state over prop drilling**: A single `DesktopContext` owns all windows, workspaces, and focus state.
 4. **Spring over duration**: Animations use Framer Motion spring physics for an organic, OS-like feel.
 5. **Layered feedback**: Visual (shadows, glows, indicators), audio (optional sound effects), and motion (scale, opacity, slide) work together to communicate state.
 6. **Minimal, realistic apps**: Each application is recognizable and functional without becoming a full separate project.
+
+### Responsive Behaviour
+
+| Range | Layout | Window presentation |
+| --- | --- | --- |
+| ≥ 1024px | Full Ubuntu desktop: top panel, desktop icons, floating dock, workspaces | Draggable, resizable floating windows |
+| 768–1023px | Same desktop chrome, scaled spacing, full-width dock | Windows clamp to the viewport with a slide-in dock tooltip |
+| ≤ 767px | Touch shell: status bar, home grid, 5-slot bottom dock, activities launcher | One full-height app panel at a time, inset between status bar and dock |
+
+- Breakpoints are CSS-driven (`mobile-only` / `desktop-only` utilities), with `useIsMobile` only deciding window presentation, so there is no hydration flash.
+- Shell offsets live in CSS variables (`--statusbar-h`, `--dock-h`, `--mobile-gutter`) and respect `env(safe-area-inset-*)` on notched devices.
+- Dragging and resizing use Pointer Events, so touch works on tablets; resize handles are disabled for touch pointers.
+- All motion honours `prefers-reduced-motion` via `MotionConfig reducedMotion="user"` and a global CSS guard.
 
 ---
 
@@ -191,7 +204,7 @@ Features:
 - **Title bar**: left-side traffic-light buttons (close, minimize, maximize) + window title; right-side window controls.
 - **Dragging**: Drag the title bar to reposition the window.
 - **Resizing**: Eight resize handles (N, S, E, W, NE, NW, SE, SW) for resizable windows.
-- **Maximize**: Fills the viewport; double-click the title bar could also toggle maximize (not implemented, but controls are present).
+- **Maximize**: Fills the viewport; double-clicking the title bar toggles maximize.
 - **Focus ring**: Active window gets a subtle white ring.
 - **Stop propagation**: `onPointerDown` on the frame and title bar prevents the desktop workspace drag from starting when interacting with a window.
 - **Responsive clamping**: `maxWidth` and `maxHeight` ensure windows never overflow the viewport on small screens.

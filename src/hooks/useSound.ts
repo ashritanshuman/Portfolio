@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback } from "react";
 import { useDesktop } from "@/components/desktop/DesktopContext";
 
 export type SoundName = "startup" | "open" | "close" | "click" | "type" | "notification" | "minimize" | "maximize";
@@ -14,36 +14,42 @@ const SOUND_URLS: Record<SoundName, string> = {
   maximize: "https://actions.google.com/sounds/v1/cartoon/pop.ogg",
 };
 
-export function useSound() {
-  const { soundEnabled } = useDesktop();
-  const audioRefs = useRef<Partial<Record<SoundName, HTMLAudioElement>>>({});
+// Lazily created, shared across hook instances. Nothing is downloaded until a
+// sound is actually played, which keeps the boot light on slow connections.
+const audioCache = new Map<SoundName, HTMLAudioElement>();
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    (Object.keys(SOUND_URLS) as SoundName[]).forEach((name) => {
-      const audio = new Audio(SOUND_URLS[name]);
+function getAudio(name: SoundName): HTMLAudioElement | null {
+  if (typeof window === "undefined") return null;
+  let audio = audioCache.get(name);
+  if (!audio) {
+    try {
+      audio = new Audio(SOUND_URLS[name]);
       audio.preload = "auto";
       audio.volume = 0.3;
-      audioRefs.current[name] = audio;
-    });
+      audioCache.set(name, audio);
+    } catch {
+      return null;
+    }
+  }
+  return audio;
+}
 
-    return () => {
-      audioRefs.current = {};
-    };
-  }, []);
+export function useSound() {
+  const { soundEnabled } = useDesktop();
 
-  const play = useCallback(
+  return useCallback(
     (name: SoundName) => {
-      if (!soundEnabled || typeof window === "undefined") return;
-      const audio = audioRefs.current[name];
-      if (audio) {
+      if (!soundEnabled) return;
+      const audio = getAudio(name);
+      if (!audio) return;
+      try {
         audio.currentTime = 0;
+        // Autoplay policies may reject this until the user interacts.
         audio.play().catch(() => {});
+      } catch {
+        // Audio is a progressive enhancement; never let it break interaction.
       }
     },
     [soundEnabled]
   );
-
-  return play;
 }
