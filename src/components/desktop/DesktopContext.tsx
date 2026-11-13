@@ -20,13 +20,20 @@ interface DesktopContextType {
   soundEnabled: boolean;
   setSoundEnabled: (v: boolean) => void;
   openApp: (appId: AppId, options?: { workspace?: number; focus?: boolean }) => string | undefined;
+  launchApp: (appId: AppId, options?: { workspace?: number }) => string | undefined;
   closeWindow: (id: string) => void;
   focusWindow: (id: string) => void;
   minimizeWindow: (id: string) => void;
   maximizeWindow: (id: string) => void;
+  unmaximizeWindow: (id: string) => void;
   restoreWindow: (id: string, options?: { workspace?: number }) => void;
   moveWindow: (id: string, x: number, y: number) => void;
   resizeWindow: (id: string, width: number, height: number) => void;
+  /** One state update for a combined move + resize (used while resizing). */
+  setWindowBounds: (
+    id: string,
+    bounds: Partial<Pick<WindowState, "x" | "y" | "width" | "height">>
+  ) => void;
   setWindowWorkspace: (id: string, workspace: number) => void;
   setWorkspace: (workspace: number) => void;
   toggleActivities: () => void;
@@ -54,16 +61,20 @@ function clampSize(width: number, height: number, minWidth: number, minHeight: n
   };
 }
 
-function centerPosition(width: number, height: number, offset: number) {
-  if (typeof window === "undefined") return { x: 80 + offset, y: 80 + offset };
-  const maxW = window.innerWidth;
-  const maxH = window.innerHeight;
+/**
+ * Usable desktop workspace: the viewport minus the top system panel and the
+ * bottom dock. Every new window is placed at the exact centre of this area.
+ *
+ * Windows are `position: fixed`, so the returned values are plain viewport
+ * coordinates for the window's top-left corner.
+ */
+export function centeredWindowPosition(width: number, height: number) {
+  if (typeof window === "undefined") return { x: 0, y: WINDOW_TOP_MARGIN };
+  const workspaceWidth = window.innerWidth;
+  const workspaceHeight = Math.max(0, window.innerHeight - WINDOW_TOP_MARGIN - WINDOW_BOTTOM_RESERVE);
   return {
-    x: Math.max(8, Math.min(maxW - width - 24, (maxW - width) / 2 + offset)),
-    y: Math.max(
-      WINDOW_TOP_MARGIN,
-      Math.min(maxH - height - WINDOW_BOTTOM_RESERVE, (maxH - height) / 2 + offset)
-    ),
+    x: Math.max(0, Math.round((workspaceWidth - width) / 2)),
+    y: WINDOW_TOP_MARGIN + Math.max(0, Math.round((workspaceHeight - height) / 2)),
   };
 }
 
@@ -74,7 +85,6 @@ export function DesktopProvider({ children }: { children: React.ReactNode }) {
   const [activitiesOpen, setActivitiesOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const zIndexRef = useRef(10);
-  const openCountRef = useRef(0);
 
   const getAppConfig = useCallback((appId: AppId) => APPS[appId] ?? APPS.about, []);
 
@@ -82,11 +92,17 @@ export function DesktopProvider({ children }: { children: React.ReactNode }) {
     setWindows((prev) => {
       const target = prev.find((w) => w.id === id);
       if (!target || target.minimized) return prev;
+      // Already focused and on top: nothing to re-render.
+      const topZ = prev.reduce((max, w) => Math.max(max, w.zIndex), 0);
+      if (target.focused && target.zIndex === topZ) return prev;
       zIndexRef.current += 1;
       const nextZ = zIndexRef.current;
-      return prev.map((w) =>
-        w.id === id ? { ...w, focused: true, zIndex: nextZ } : { ...w, focused: false }
-      );
+      // Only the previously focused window and the target change, so React
+      // keeps every other window's props identical (memo-friendly).
+      return prev.map((w) => {
+        if (w.id === id) return { ...w, focused: true, zIndex: nextZ };
+        return w.focused ? { ...w, focused: false } : w;
+      });
     });
     setActiveWindowId(id);
   }, []);
@@ -95,9 +111,9 @@ export function DesktopProvider({ children }: { children: React.ReactNode }) {
     (appId: AppId, options?: { workspace?: number; focus?: boolean }) => {
       const config = getAppConfig(appId);
       const { width, height } = clampSize(config.width, config.height, config.minWidth, config.minHeight);
-      const offset = openCountRef.current * 24;
-      const { x, y } = centerPosition(width, height, offset);
-      openCountRef.current += 1;
+      // Always the centre of the usable workspace; no per-open cascade offset,
+      // so reopening an app never nudges the window off-centre.
+      const { x, y } = centeredWindowPosition(width, height);
       const id = `${appId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
       zIndexRef.current += 1;
 
@@ -117,7 +133,7 @@ export function DesktopProvider({ children }: { children: React.ReactNode }) {
       };
 
       setWindows((prev) => {
-        const updated = prev.map((w) => ({ ...w, focused: false }));
+        const updated = prev.map((w) => (w.focused ? { ...w, focused: false } : w));
         return [...updated, newWindow];
       });
       setActiveWindowId(id);
@@ -139,7 +155,9 @@ export function DesktopProvider({ children }: { children: React.ReactNode }) {
           .sort((a, b) => b.zIndex - a.zIndex)[0];
         if (top) {
           setActiveWindowId(top.id);
-          return remaining.map((w) => ({ ...w, focused: w.id === top.id }));
+          return remaining.map((w) =>
+            w.id === top.id ? { ...w, focused: true } : w.focused ? { ...w, focused: false } : w
+          );
         }
         setActiveWindowId(null);
       }
@@ -157,7 +175,9 @@ export function DesktopProvider({ children }: { children: React.ReactNode }) {
           .filter((w) => !w.minimized && w.workspace === target.workspace)
           .sort((a, b) => b.zIndex - a.zIndex)[0];
         setActiveWindowId(top?.id ?? null);
-        return next.map((w) => ({ ...w, focused: w.id === top?.id }));
+        return next.map((w) =>
+          w.id === top?.id ? { ...w, focused: true } : w.focused ? { ...w, focused: false } : w
+        );
       }
       return next;
     });
@@ -170,13 +190,33 @@ export function DesktopProvider({ children }: { children: React.ReactNode }) {
     focusWindow(id);
   }, [focusWindow]);
 
+  /**
+   * Leaves full-screen mode and returns the window to its stored (centred)
+   * position and size. Distinct from `restoreWindow`, which un-minimizes.
+   */
+  const unmaximizeWindow = useCallback((id: string) => {
+    setWindows((prev) => prev.map((w) => (w.id === id ? { ...w, maximized: false } : w)));
+    focusWindow(id);
+  }, [focusWindow]);
+
   const restoreWindow = useCallback((id: string, options?: { workspace?: number }) => {
+    // Restoring should raise the window above the others and keep its
+    // maximized state so a minimized-maximized window comes back intact.
+    zIndexRef.current += 1;
+    const nextZ = zIndexRef.current;
     setWindows((prev) =>
-      prev.map((w) =>
-        w.id === id
-          ? { ...w, minimized: false, maximized: false, focused: true, workspace: options?.workspace ?? w.workspace }
-          : { ...w, focused: false }
-      )
+      prev.map((w) => {
+        if (w.id === id) {
+          return {
+            ...w,
+            minimized: false,
+            focused: true,
+            zIndex: nextZ,
+            workspace: options?.workspace ?? w.workspace,
+          };
+        }
+        return w.focused ? { ...w, focused: false } : w;
+      })
     );
     setActiveWindowId(id);
   }, []);
@@ -191,6 +231,26 @@ export function DesktopProvider({ children }: { children: React.ReactNode }) {
     setWindows((prev) => prev.map((w) => (w.id === id ? { ...w, width, height } : w)));
   }, []);
 
+  /** Single update for move+resize so a resize frame costs one render, not two. */
+  const setWindowBounds = useCallback(
+    (id: string, bounds: Partial<Pick<WindowState, "x" | "y" | "width" | "height">>) => {
+      setWindows((prev) =>
+        prev.map((w) => {
+          if (w.id !== id) return w;
+          const next = { ...w, ...bounds, maximized: false };
+          const unchanged =
+            next.x === w.x &&
+            next.y === w.y &&
+            next.width === w.width &&
+            next.height === w.height &&
+            next.maximized === w.maximized;
+          return unchanged ? w : next;
+        })
+      );
+    },
+    []
+  );
+
   const setWindowWorkspace = useCallback((id: string, ws: number) => {
     setWindows((prev) => prev.map((w) => (w.id === id ? { ...w, workspace: ws } : w)));
   }, []);
@@ -198,6 +258,31 @@ export function DesktopProvider({ children }: { children: React.ReactNode }) {
   const setWorkspace = useCallback((ws: number) => {
     setWorkspaceState(Math.max(1, Math.min(WORKSPACE_COUNT, ws)));
   }, []);
+
+  /**
+   * Single entry point for every launcher (desktop icons, dock, hero,
+   * widgets, mobile home). Focuses an existing window instead of opening a
+   * duplicate, and restores minimized windows.
+   */
+  const launchApp = useCallback(
+    (appId: AppId, options?: { workspace?: number }) => {
+      const targetWorkspace = options?.workspace ?? workspace;
+      const existing = windows.find((w) => w.appId === appId);
+      if (existing) {
+        if (existing.workspace !== targetWorkspace) {
+          setWindows((prev) =>
+            prev.map((w) => (w.id === existing.id ? { ...w, workspace: targetWorkspace } : w))
+          );
+        }
+        if (targetWorkspace !== workspace) setWorkspaceState(targetWorkspace);
+        if (existing.minimized) restoreWindow(existing.id, { workspace: targetWorkspace });
+        else focusWindow(existing.id);
+        return existing.id;
+      }
+      return openApp(appId, { workspace: targetWorkspace, focus: true });
+    },
+    [windows, workspace, focusWindow, restoreWindow, openApp]
+  );
 
   const toggleActivities = useCallback(() => {
     setActivitiesOpen((v) => !v);
@@ -286,13 +371,16 @@ export function DesktopProvider({ children }: { children: React.ReactNode }) {
         soundEnabled,
         setSoundEnabled,
         openApp,
+        launchApp,
         closeWindow,
         focusWindow,
         minimizeWindow,
         maximizeWindow,
+        unmaximizeWindow,
         restoreWindow,
         moveWindow,
         resizeWindow,
+        setWindowBounds,
         setWindowWorkspace,
         setWorkspace,
         toggleActivities,

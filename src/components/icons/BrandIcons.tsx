@@ -17,3 +17,20 @@ export function LinkedInIcon({ className }: BrandIconProps) {
     </svg>
   );
 }
+
+/** Simplified Ubuntu "Circle of Friends" mark used in the top panel. */
+export function UbuntuMark({ className }: BrandIconProps) {
+  const heads = [0, 120, 240].map((deg) => {
+    const rad = ((deg - 90) * Math.PI) / 180;
+    return { x: 12 + 6.1 * Math.cos(rad), y: 12 + 6.1 * Math.sin(rad) };
+  });
+  return (
+    <svg className={className} viewBox="0 0 24 24" role="img" aria-label="Ubuntu" focusable="false">
+      <circle cx="12" cy="12" r="11" fill="#E95420" />
+      <circle cx="12" cy="12" r="5.1" fill="none" stroke="#fff" strokeWidth="1.7" />
+      {heads.map((h, i) => (
+        <circle key={i} cx={h.x} cy={h.y} r="1.9" fill="#fff" />
+      ))}
+    </svg>
+  );
+}

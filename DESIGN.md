@@ -81,9 +81,35 @@ The portfolio abandons the traditional vertical-scrolling website in favor of a 
 └─────────────────────────────────────────┘
 ```
 
+### Desktop Composition
+
+The home screen is a layered composition rather than a single canvas:
+
+1. **Wallpaper layer** – the original asset from `public/assets/ubuntu-portfolio-wallpaper.png`, applied with `cover` / `center` / `no-repeat`.
+2. **Desktop backdrop** – left app shortcuts, the hero section, and three information widgets (Education, Quick Access, Now Building). The whole backdrop is blurred and dimmed from live window state.
+3. **Window layer** – floating windows rendered above the backdrop, never inside the blurred element, so window content stays sharp.
+4. **Shell layer** – top panel and dock, always sharp and interactive.
+5. **Overlay layer** – Activities Overview (`z-9000`).
+
+The backdrop filter is derived, not toggled manually: `desktopBlurred = visibleWindows.length > 0`. Minimizing the last window or closing it restores the sharp desktop; closing one of several windows keeps it blurred.
+
+### Liquid Glass
+
+Reusable utilities in `globals.css`:
+
+| Class | Used by | Notes |
+| --- | --- | --- |
+| `.glass` | generic surfaces | burgundy gradient, 24px blur, inner highlight |
+| `.glass-card` | hero widgets | 20px radius, layered shadow |
+| `.glass-window` | window shell | deeper tint, 28px blur |
+| `.glass-dock` / `.glass-panel` | dock / top panel | strongest tint for legibility |
+| `.glass-inset` | quick-action tiles | faint fill for nested controls |
+
+All surfaces share `--glass-border`, `--glass-highlight`, `--glass-shadow`, and fall back to an opaque burgundy surface when `backdrop-filter` is unsupported.
+
 ### State Flow
 
-1. User clicks a dock or desktop icon.
+1. User clicks a dock, desktop icon, hero button, or widget shortcut.
 2. The action is dispatched to `DesktopContext`.
 3. `DesktopContext` updates `windows` array and `activeWindowId`.
 4. `Desktop` re-renders windows through `WindowFrame`.
@@ -126,12 +152,14 @@ interface WindowState {
 
 | Action | Behavior |
 | --- | --- |
-| `openApp(appId, options?)` | Creates a new window for an app, clamps size to viewport, centers it, and assigns z-index. |
+| `openApp(appId, options?)` | Creates a new window for an app, clamps its size to the viewport, and places it at the exact centre of the usable workspace (`centeredWindowPosition`). No cascade offset, so reopening never drifts. |
+| `launchApp(appId, options?)` | Single launcher used by every shortcut: focuses an existing window, restores a minimized one, or opens a new window. Prevents duplicate instances. |
 | `closeWindow(id)` | Removes the window; promotes next top window to focus. |
 | `focusWindow(id)` | Raises z-index and marks the window focused. |
 | `minimizeWindow(id)` | Hides the window; promotes next window if it was focused. |
 | `maximizeWindow(id)` | Fills the viewport; restores focus. |
-| `restoreWindow(id, options?)` | Un-minimizes and focuses a window; optionally sets workspace. |
+| `unmaximizeWindow(id)` | Leaves full-screen and returns the window to its stored (centred) position and size. |
+| `restoreWindow(id, options?)` | Un-minimizes, raises z-index, and focuses a window; keeps its maximized state. |
 | `moveWindow(id, x, y)` | Updates position; un-maximizes if moved. |
 | `resizeWindow(id, width, height)` | Updates dimensions. |
 | `setWindowWorkspace(id, ws)` | Moves a window to another workspace. |
@@ -145,11 +173,49 @@ A mutable `zIndexRef` starts at 10 and increments each time a window is focused.
 
 ### Window Lifecycle
 
-1. **Open**: Animate from `scale: 0.8, opacity: 0` to `scale: 1, opacity: 1`.
-2. **Focus**: z-index increases; subtle ring highlight appears.
-3. **Minimize**: Exit animation `scale: 0.9, opacity: 0`; window removed from visible list.
-4. **Maximize**: Snaps to full viewport dimensions.
-5. **Restore**: Returns to previous dimensions and position.
+1. **Open**: Geometry is final on the first frame (dead centre), while a compositor-only transition fades `opacity` 0 → 1 and settles `scale 0.97 → 1` / `y +8 → 0` over 200ms (`cubic-bezier(0.22, 1, 0.36, 1)`).
+2. **Focus**: z-index increases; subtle ring highlight appears. Clicking an already-focused, top-most window is a no-op, so no render is scheduled.
+3. **Minimize**: The window stays mounted (terminal history, scroll position and folder state survive) and animates to `opacity: 0` / `scale 0.97`; `visibility: hidden` flips after the animation, so it leaves hit-testing and the accessibility tree without a remount.
+4. **Maximize**: Snaps to full viewport dimensions (native feel — no geometry animation).
+5. **Restore**: Returns to the stored position and size (still centred if it was never dragged).
+6. **Close**: One shared `AnimatePresence` in `Desktop` owns presence. The frame keeps its final geometry and runs an `opacity`/`scale` exit, which also propagates to the app subtree, so the window is painted while it leaves instead of vanishing.
+
+### Window Interaction Performance
+
+Windows are deliberately split into two layers so transforms never fight each other:
+
+| Layer | Owns | Animated? |
+| --- | --- | --- |
+| Outer `motion.div` | `x`/`y` motion values, `width`/`height`, `z-index` | Only its `x`/`y` motion values, written by drag |
+| Inner `motion.div` | opacity/scale/y for open, minimize and close | Yes, compositor-only |
+
+- **Position lives in motion values, not React state.** `x`/`y` are `useMotionValue`s written straight to the compositor during a drag; React state (`moveWindow`) is committed once, on pointer-up.
+- **Pointer capture + `requestAnimationFrame`.** Title-bar drags use `setPointerCapture` on the pointer that started the gesture, so no global listeners are registered and moves outside the title bar still track. Pointer moves only store a target; one `rAF` callback applies it, capping updates at one per frame. Works for mouse, pen and touch (`touch-action: none` on the title bar).
+- **Listener cleanup** is guaranteed by pointer capture: `pointerup`/`pointercancel` both release capture, cancel the pending frame and flush the final position.
+- **Resize** uses pointer capture plus one `setWindowBounds(id, {x, y, width, height})` call per frame, so a resize frame costs a single state update instead of a move + resize pair.
+- **Identity-preserving context updates.** Only the window that changed gets a new object; unrelated windows keep their previous references, so `WindowHost` (memoised) skips re-rendering and app content is never re-mounted by focus changes or drag commits.
+- **`will-change` is scoped.** `.window-dragging` is toggled on the frame only while a drag is active, then removed.
+- **Blur is not on the moving surface.** `.glass-window` keeps its tint, border and shadow but has no `backdrop-filter`; the title-bar strip owns `backdrop-filter: blur(16px)`, so dragging never re-samples a full-window blur.
+
+Measured with CDP `Performance.getMetrics` over a 90-step drag (1440×900): main-thread task time 0.678s → 0.218s, script time 0.365s → 0.032s, layout passes 18 → 4, style recalculations 283 → 102.
+
+### Window Placement
+
+Every window is `position: fixed` and positioned by viewport coordinates (`x`, `y`) supplied by `DesktopContext`. New windows use `centeredWindowPosition(width, height)`:
+
+```ts
+const workspaceHeight =
+  window.innerHeight - WINDOW_TOP_MARGIN - WINDOW_BOTTOM_RESERVE; // panel + dock
+
+x = round((window.innerWidth  - width)  / 2);
+y = WINDOW_TOP_MARGIN + round((workspaceHeight - height) / 2);
+```
+
+- `WINDOW_TOP_MARGIN = 40` keeps the titlebar below the 32px top panel.
+- `WINDOW_BOTTOM_RESERVE = 96` keeps the window above the floating dock.
+- Clamping happens before centring, so an oversized window is still fully visible.
+- No per-open offset is applied, so every app opens dead-centre and repeat opens do not drift.
+- Mobile windows ignore these coordinates and use the full-height panel layout.
 6. **Close**: Exit animation; focus shifts to the next top window on the same workspace.
 
 ---
@@ -163,16 +229,32 @@ The root desktop shell. It composes all desktop-level components and wires up ge
 Responsibilities:
 - Render the boot screen until booted.
 - Render the fixed top panel, dock, and activities overlay.
-- Render the draggable desktop motion container.
-- Handle global wheel, touch, and drag gestures for workspace switching.
+- Render the desktop backdrop (wallpaper, shortcuts, hero, widgets) as a single blurred/dimmed layer.
+- Derive the backdrop blur from window state and render windows as siblings of that layer.
 - Render the workspace indicator.
 
 ### `TopPanel` (`src/components/desktop/TopPanel.tsx`)
 
 A fixed, glass-panel bar at the top of the screen.
 
-- Left: "Activities" button toggles the Activities Overview.
+- Left: "Activities" button, Ubuntu mark, "Ashrit Anshuman", and "Portfolio OS".
 - Right: sound toggle, Wi-Fi, battery, user icons, and a live digital clock/date.
+
+### `HeroSection` (`src/components/desktop/HeroSection.tsx`)
+
+The central-left introduction on the desktop backdrop.
+
+- Welcome pill, two-line name (white + `#F36B21`), uppercase tagline, and the profile description.
+- "Explore Apps" opens the Activities launcher; "About Me" calls `launchApp("about")`.
+- Staggered entrance via Framer Motion variants; inherits global `prefers-reduced-motion`.
+
+### `DesktopWidgets` (`src/components/desktop/DesktopWidgets.tsx`)
+
+Three glass cards in a right-hand column (a 3-up row on tablet widths).
+
+- **Education** – institution, degree, and duration.
+- **Quick Access** – Projects/Resume open windows, GitHub/LinkedIn open external tabs.
+- **Now Building** – live indicator plus the SkilloraAI link from `PROJECTS`.
 
 ### `Dock` (`src/components/desktop/Dock.tsx`)
 
@@ -201,13 +283,15 @@ A left-aligned vertical grid of desktop shortcuts.
 The core window chrome that wraps every application.
 
 Features:
-- **Title bar**: left-side traffic-light buttons (close, minimize, maximize) + window title; right-side window controls.
-- **Dragging**: Drag the title bar to reposition the window.
-- **Resizing**: Eight resize handles (N, S, E, W, NE, NW, SE, SW) for resizable windows.
+- **Title bar**: left-side traffic-light buttons (close, minimize, maximize) + app icon + window title; right-side window controls.
+- **Dragging**: Drag the title bar to reposition the window. Pointer Events + pointer capture keep the gesture alive outside the title bar; moves are batched into one `requestAnimationFrame` and applied to `x`/`y` motion values, so React never re-renders mid-drag. Touch works on tablets.
+- **Resizing**: Eight resize handles (N, S, E, W, NE, NW, SE, SW) for resizable windows; hidden for coarse pointers.
 - **Maximize**: Fills the viewport; double-clicking the title bar toggles maximize.
-- **Focus ring**: Active window gets a subtle white ring.
+- **Focus ring**: Active window gets a subtle white ring; windows always stack above the desktop icons.
 - **Stop propagation**: `onPointerDown` on the frame and title bar prevents the desktop workspace drag from starting when interacting with a window.
+- **Independent scrolling**: the content area fills the frame and each app owns its scroll container.
 - **Responsive clamping**: `maxWidth` and `maxHeight` ensure windows never overflow the viewport on small screens.
+- **Phone mode**: renders as a fixed panel between the status bar and dock, with a 44px close/minimize header.
 
 ### `ActivitiesOverview` (`src/components/desktop/ActivitiesOverview.tsx`)
 
@@ -387,10 +471,13 @@ The background is generated with layered CSS gradients and radial overlays to mi
 Panels, the dock, and windows use `backdrop-filter: blur()` with translucent dark backgrounds and subtle white borders:
 
 ```css
-.glass-panel { backdrop-filter: blur(20px) saturate(1.6); }
-.glass-dock  { backdrop-filter: blur(24px) saturate(1.8); }
-.glass-window { backdrop-filter: blur(16px); }
+.glass-panel      { backdrop-filter: blur(20px) saturate(1.6); }
+.glass-dock       { backdrop-filter: blur(24px) saturate(1.8); }
+.glass-window     { /* tint, border and shadow only */ }
+.window-titlebar  { backdrop-filter: blur(16px) saturate(1.5); }
 ```
+
+The window shell itself deliberately carries no `backdrop-filter`: the content panel is opaque, and a full-window blur is re-sampled on every frame while a window is dragged. Moving the blur to the 36px title-bar strip keeps the glass look and takes the expensive filter off the moving surface.
 
 ### Window Chrome
 

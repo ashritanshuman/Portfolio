@@ -4,6 +4,7 @@ import { Battery, Wifi, Volume2, VolumeX, User, LayoutGrid } from "lucide-react"
 import { useDesktop } from "./DesktopContext";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { UbuntuMark } from "@/components/icons/BrandIcons";
 
 export function TopPanel() {
   const { toggleActivities, setActivitiesOpen, activitiesOpen, soundEnabled, setSoundEnabled, windows, activeWindowId } =
@@ -27,7 +28,7 @@ export function TopPanel() {
       onClick={(e) => e.stopPropagation()}
       className="fixed top-0 left-0 right-0 z-[9999] statusbar-safe glass-panel text-white text-sm flex items-center justify-between gap-1 px-2 md:px-3 select-none"
     >
-      <div className="flex items-center gap-1 md:gap-4 min-w-0">
+      <div className="flex items-center gap-1 md:gap-3 min-w-0">
         <button
           onClick={toggleActivities}
           aria-expanded={activitiesOpen}
@@ -39,13 +40,25 @@ export function TopPanel() {
           <span className="min-[370px]:hidden sr-only">Activities</span>
         </button>
 
+        {/* Brand cluster */}
+        <div className="hidden sm:flex items-center gap-2 min-w-0 border-l border-white/10 pl-3 md:pl-4">
+          <UbuntuMark className="h-[18px] w-[18px] shrink-0 drop-shadow-[0_2px_6px_rgba(233,84,32,0.45)]" />
+          <span className="truncate text-[13px] font-semibold text-white/95">Ashrit Anshuman</span>
+          <span className="hidden md:inline text-[11px] text-white/35" aria-hidden="true">
+            ·
+          </span>
+          <span className="hidden md:inline whitespace-nowrap text-[11px] font-medium tracking-wide text-white/55">
+            Portfolio OS
+          </span>
+        </div>
+
         <AnimatePresence>
           {activitiesOpen && (
             <motion.span
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -8 }}
-              className="hidden sm:inline text-xs text-white/70"
+              className="hidden lg:inline text-xs text-white/70"
             >
               Desktop
             </motion.span>
@@ -53,7 +66,7 @@ export function TopPanel() {
         </AnimatePresence>
 
         {!activitiesOpen && (
-          <span className="md:hidden truncate max-w-[32vw] text-[11px] text-white/55" aria-live="polite">
+          <span className="sm:hidden truncate max-w-[32vw] text-[11px] text-white/55" aria-live="polite">
             {activeTitle}
           </span>
         )}
@@ -74,7 +87,7 @@ export function TopPanel() {
         </button>
         <Wifi className="w-4 h-4 mx-1 md:mx-0" aria-label="Wi-Fi connected" role="img" />
         <Battery className="w-4 h-4 mx-1 md:mx-0" aria-label="Battery 85 percent, charging" role="img" />
-        <User className="hidden md:block w-4 h-4" aria-label="User account" role="img" />
+        <User className="hidden sm:block w-4 h-4" aria-label="User account" role="img" />
         <button
           onClick={() => setActivitiesOpen(true)}
           className="flex flex-col items-end leading-none px-1.5 h-9 md:h-auto justify-center rounded-md hover:bg-white/10 md:hover:bg-transparent active:bg-white/15 md:hover:opacity-80 transition-colors"

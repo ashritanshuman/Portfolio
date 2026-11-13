@@ -1,3 +1,4 @@
+import { createElement } from "react";
 import {
   Activity,
   Code2,
@@ -25,6 +26,11 @@ const ICON_MAP: Record<string, LucideIcon> = {
 
 export function getIcon(name: string): LucideIcon {
   return ICON_MAP[name] ?? Globe;
+}
+
+/** Renders a Lucide icon by name without creating a component in render. */
+export function AppIcon({ name, className }: { name: string; className?: string }) {
+  return createElement(getIcon(name), { className, "aria-hidden": true });
 }
 
 export type IconName = keyof typeof ICON_MAP;

@@ -15,7 +15,7 @@ const MOBILE_LABELS: Partial<Record<AppId, string>> = {
   about: "About",
   projects: "Projects",
   resume: "Resume",
-  contact: "Terminal",
+  contact: "Contact",
 };
 
 const MENU_WIDTH = 184;
@@ -24,9 +24,7 @@ const MENU_HEIGHT = 132;
 export function Dock() {
   const {
     openApp,
-    focusWindow,
-    restoreWindow,
-    runningAppIds,
+    launchApp,
     activeWindowId,
     windows,
     workspace,
@@ -41,16 +39,8 @@ export function Dock() {
   const handleOpen = (appId: AppId) => {
     play("click");
     setActivitiesOpen(false);
-    const existing = windows.find((w) => w.appId === appId);
-    if (existing) {
-      if (existing.minimized) {
-        restoreWindow(existing.id, { workspace });
-      } else {
-        focusWindow(existing.id);
-      }
-    } else {
-      openApp(appId, { focus: true });
-    }
+    // Focuses/running windows, restores minimized ones, opens otherwise.
+    launchApp(appId, { workspace });
   };
 
   const openContextMenu = (e: React.MouseEvent, appId: AppId) => {
@@ -74,8 +64,10 @@ export function Dock() {
           {DOCK_APPS.map((appId, index) => {
             const appConfig = APPS[appId];
             const Icon = getIcon(appConfig.icon);
-            const isRunning = runningAppIds.includes(appId);
-            const isActive = windows.some((w) => w.id === activeWindowId && w.appId === appId);
+            const appWindows = windows.filter((w) => w.appId === appId);
+            const isRunning = appWindows.length > 0;
+            const isMinimized = appWindows.length > 0 && appWindows.every((w) => w.minimized);
+            const isActive = windows.some((w) => w.id === activeWindowId && w.appId === appId && !w.minimized);
             const isHovered = hovered === appId;
             const scale = isHovered ? 1.35 : 1;
             const neighborScale =
@@ -89,9 +81,10 @@ export function Dock() {
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 6 }}
-                      className="absolute -top-9 bg-black/80 text-white text-xs px-2 py-1 rounded-md whitespace-nowrap pointer-events-none backdrop-blur-sm"
+                      className="pointer-events-none absolute -top-9 whitespace-nowrap rounded-md bg-black/80 px-2 py-1 text-xs text-white backdrop-blur-sm"
                     >
-                      {appId.charAt(0).toUpperCase() + appId.slice(1)}
+                      {appConfig.title}
+                      {isMinimized && <span className="ml-1 text-white/45">· minimized</span>}
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -109,21 +102,39 @@ export function Dock() {
                   whileTap={{ scale: 0.9 }}
                   animate={{ scale: scale * neighborScale, y: isHovered ? -8 : 0 }}
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  className={`relative p-1.5 lg:p-2 rounded-xl transition-shadow ${
-                    isActive ? "shadow-[0_0_20px_rgba(233,84,32,0.5)]" : ""
+                  className={`relative rounded-xl p-1.5 transition-shadow lg:p-2 ${
+                    isActive ? "shadow-[0_0_22px_rgba(233,84,32,0.55)]" : ""
                   }`}
-                  aria-label={`Open ${appId}`}
+                  aria-label={
+                    isMinimized
+                      ? `Restore ${appConfig.title}`
+                      : isRunning
+                      ? `Focus ${appConfig.title}`
+                      : `Open ${appConfig.title}`
+                  }
+                  aria-pressed={isActive}
                 >
-                  <div className="w-10 h-10 lg:w-11 lg:h-11 rounded-xl bg-gradient-to-br from-white/20 to-white/5 flex items-center justify-center shadow-lg">
-                    <Icon className="w-6 h-6 lg:w-7 lg:h-7 text-white" aria-hidden="true" />
+                  <div
+                    className={`flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-gradient-to-br from-white/20 to-white/5 shadow-lg transition-colors lg:h-11 lg:w-11 ${
+                      isActive ? "ring-1 ring-[#f36b21]/70" : ""
+                    }`}
+                  >
+                    <Icon className="h-6 w-6 text-white lg:h-7 lg:w-7" aria-hidden="true" />
                   </div>
                   {isRunning && (
                     <motion.div
                       layoutId={`indicator-${appId}`}
-                      className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-white/90"
+                      className={`absolute -bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full ${
+                        isActive ? "bg-[#f36b21]" : "bg-white/80"
+                      }`}
                     />
                   )}
-                  {isActive && <div className="absolute inset-0 rounded-xl ring-2 ring-white/20 pointer-events-none" />}
+                  {isMinimized && (
+                    <span
+                      className="absolute -right-0.5 top-0 h-1.5 w-1.5 rounded-full bg-white/60"
+                      aria-hidden="true"
+                    />
+                  )}
                 </motion.button>
               </div>
             );
@@ -186,7 +197,9 @@ export function Dock() {
             {MOBILE_DOCK_APPS.map((appId) => {
               const appConfig = APPS[appId];
               const Icon = getIcon(appConfig.icon);
-              const isOpen = windows.some((w) => w.appId === appId);
+              const appWindows = windows.filter((w) => w.appId === appId);
+              const isOpen = appWindows.length > 0;
+              const isMinimized = isOpen && appWindows.every((w) => w.minimized);
               const isActive = windows.some(
                 (w) => w.id === activeWindowId && w.appId === appId && !w.minimized
               );
@@ -195,23 +208,27 @@ export function Dock() {
                   key={appId}
                   data-dock-icon={appId}
                   onClick={() => handleOpen(appId)}
-                  className={`relative flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl active:bg-white/10 transition-colors ${
+                  className={`relative flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl transition-colors active:bg-white/10 ${
                     isActive ? "text-white" : "text-white/80"
                   }`}
-                  aria-label={`Open ${appConfig.title}`}
+                  aria-label={
+                    isMinimized ? `Restore ${appConfig.title}` : `Open ${appConfig.title}`
+                  }
                   aria-pressed={isActive}
                 >
                   <span
                     className={`flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-white/20 to-white/5 ${
-                      isActive ? "ring-1 ring-[#e95420]/70" : ""
+                      isActive ? "ring-1 ring-[#f36b21]/70" : ""
                     }`}
                   >
-                    <Icon className="w-[18px] h-[18px]" aria-hidden="true" />
+                    <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
                   </span>
                   <span className="text-[9px] leading-none">{MOBILE_LABELS[appId] ?? appConfig.title}</span>
                   {isOpen && (
                     <span
-                      className="absolute bottom-0.5 h-1 w-1 rounded-full bg-white/90"
+                      className={`absolute bottom-0.5 h-1 w-1 rounded-full ${
+                        isActive ? "bg-[#f36b21]" : "bg-white/80"
+                      }`}
                       aria-hidden="true"
                     />
                   )}

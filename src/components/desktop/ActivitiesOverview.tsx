@@ -12,7 +12,7 @@ export function ActivitiesOverview() {
   const {
     activitiesOpen,
     setActivitiesOpen,
-    openApp,
+    launchApp,
     windows,
     workspace,
     setWorkspace,
@@ -118,7 +118,7 @@ export function ActivitiesOverview() {
                       <button
                         key={app.id}
                         onClick={() => {
-                          openApp(app.id as AppId);
+                          launchApp(app.id as AppId);
                           setSearch("");
                           setActivitiesOpen(false);
                         }}
@@ -223,7 +223,7 @@ export function ActivitiesOverview() {
                         <button
                           key={appId}
                           onClick={() => {
-                            openApp(appId as AppId);
+                            launchApp(appId as AppId);
                             setActivitiesOpen(false);
                           }}
                           className="flex flex-col items-center justify-center gap-1.5 min-h-[84px] md:min-h-0 p-2.5 md:p-3 rounded-xl bg-white/5 hover:bg-white/15 active:bg-white/20 transition-colors"

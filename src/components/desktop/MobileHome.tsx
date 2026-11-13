@@ -20,13 +20,13 @@ const HOME_LABELS: Record<string, string> = {
 };
 
 export function MobileHome({ hidden = false }: { hidden?: boolean }) {
-  const { openApp, setActivitiesOpen } = useDesktop();
+  const { launchApp, setActivitiesOpen } = useDesktop();
   const play = useSound();
 
   const launch = (appId: AppId) => {
     play("click");
     setActivitiesOpen(false);
-    openApp(appId);
+    launchApp(appId);
   };
 
   return (
@@ -38,24 +38,33 @@ export function MobileHome({ hidden = false }: { hidden?: boolean }) {
     >
       <div className="px-3 pt-3 pb-6">
         {/* Greeting card */}
-        <div className="glass-panel rounded-2xl p-4 shadow-lg">
-          <div className="flex items-center gap-3">
+        <div className="glass-card p-4">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.07] px-2.5 py-1 text-[9px] font-medium text-white/80">
+            <span aria-hidden="true">👋</span>
+            Hey, Welcome to my Portfolio OS
+          </span>
+
+          <div className="mt-3 flex items-center gap-3">
             <div
-              className="w-11 h-11 shrink-0 rounded-full bg-gradient-to-br from-[#e95420] to-[#5e2750] flex items-center justify-center text-white font-semibold text-sm shadow-inner"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#e95420] to-[#5e2750] text-sm font-semibold text-white shadow-inner"
               aria-hidden="true"
             >
               AP
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-[0.18em] text-white/55">Ubuntu Portfolio</p>
-              <h1 className="text-[15px] font-semibold text-white leading-tight truncate">
-                Ashrit Anshuman Pradhan
+              <h1 className="text-[20px] font-bold leading-[1.05] tracking-tight text-white">
+                Ashrit <span className="text-[#f36b21]">Anshuman</span>
               </h1>
-              <p className="text-[11px] text-white/65 leading-snug mt-0.5">
-                Full Stack Developer &amp; Graphic Designer
+              <p className="mt-1 text-[8px] font-semibold uppercase tracking-[0.16em] text-white/60">
+                Developer <span className="text-[#f36b21]">·</span> Data Scientist (Aspiring){" "}
+                <span className="text-[#f36b21]">·</span> Builder
               </p>
             </div>
           </div>
+
+          <p className="mt-2.5 text-[11px] leading-snug text-white/60">
+            Blending engineering, data and design to build meaningful products.
+          </p>
 
           <div className="mt-3 flex items-center gap-2">
             <button
@@ -63,18 +72,18 @@ export function MobileHome({ hidden = false }: { hidden?: boolean }) {
                 play("click");
                 setActivitiesOpen(true);
               }}
-              className="flex-1 h-11 rounded-xl bg-white/10 active:bg-white/20 transition-colors flex items-center justify-center gap-2 text-xs font-medium text-white"
+              className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-white/10 text-xs font-medium text-white transition-colors active:bg-white/20"
             >
-              <LayoutGrid className="w-4 h-4" aria-hidden="true" />
+              <LayoutGrid className="h-4 w-4" aria-hidden="true" />
               All applications
             </button>
             <a
               href="/resume.pdf"
               download="ashrit_anshuman_resume.pdf"
               onClick={() => play("click")}
-              className="flex-1 h-11 rounded-xl bg-[#e95420] active:bg-[#d14b1b] transition-colors flex items-center justify-center gap-2 text-xs font-semibold text-white"
+              className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[#e95420] text-xs font-semibold text-white transition-colors active:bg-[#d14b1b]"
             >
-              <Download className="w-4 h-4" aria-hidden="true" />
+              <Download className="h-4 w-4" aria-hidden="true" />
               Resume
             </a>
           </div>

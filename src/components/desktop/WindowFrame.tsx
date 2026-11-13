@@ -1,11 +1,12 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
-import { useRef, useState, useEffect, ReactNode } from "react";
+import { motion, useMotionValue } from "framer-motion";
+import { useRef, useEffect, ReactNode } from "react";
 import { Minus, Square, X, Maximize2, ChevronDown } from "lucide-react";
 import { useDesktop, WINDOW_TOP_MARGIN, WINDOW_BOTTOM_RESERVE } from "./DesktopContext";
 import { WindowState, AppId } from "./types";
 import { useSound } from "@/hooks/useSound";
+import { AppIcon } from "./Icon";
 import { cn } from "@/lib/utils";
 
 interface WindowFrameProps {
@@ -31,6 +32,9 @@ const resizeHandles = [
   { dir: "sw", cursor: "sw-resize", class: "bottom-0 left-0 w-4 h-4" },
 ];
 
+/** Snappy, native-feeling window open/close timing. */
+const WINDOW_TRANSITION = { duration: 0.2, ease: [0.22, 1, 0.36, 1] as const };
+
 export function WindowFrame({
   window: w,
   children,
@@ -43,18 +47,49 @@ export function WindowFrame({
     closeWindow,
     minimizeWindow,
     maximizeWindow,
-    restoreWindow,
+    unmaximizeWindow,
     moveWindow,
-    resizeWindow,
+    setWindowBounds,
     getAppConfig,
     workspace,
   } = useDesktop();
   const play = useSound();
   const config = getAppConfig(appId);
+
   const frameRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const dragStart = useRef({ x: 0, y: 0, wx: 0, wy: 0 });
-  const resizeStart = useRef({ x: 0, y: 0, width: 0, height: 0, dir: "" });
+
+  // Position lives in motion values, not React state: dragging updates the
+  // compositor directly and only commits to the store on pointer-up.
+  const x = useMotionValue(w.x);
+  const y = useMotionValue(w.y);
+  const dragRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    originX: number;
+    originY: number;
+  } | null>(null);
+  const dragRafRef = useRef(0);
+  const dragTargetRef = useRef({ x: w.x, y: w.y });
+
+  // Follow external position changes (open, restore, viewport clamp, drag end).
+  useEffect(() => {
+    if (dragRef.current) return;
+    if (w.maximized) {
+      x.set(0);
+      y.set(32);
+    } else {
+      x.set(w.x);
+      y.set(w.y);
+    }
+  }, [w.x, w.y, w.maximized, x, y]);
+
+  useEffect(
+    () => () => {
+      if (dragRafRef.current) cancelAnimationFrame(dragRafRef.current);
+    },
+    []
+  );
 
   const handleFocus = () => focusWindow(w.id);
 
@@ -70,276 +105,335 @@ export function WindowFrame({
 
   const handleMaximize = () => {
     play(w.maximized ? "open" : "maximize");
-    if (w.maximized) restoreWindow(w.id);
+    if (w.maximized) unmaximizeWindow(w.id);
     else maximizeWindow(w.id);
   };
 
   const onTitlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (mobile) return;
-    if (e.pointerType === "mouse" && e.button !== 0) return;
     if ((e.target as HTMLElement).closest("button")) return;
-    if (w.maximized) return;
-    e.preventDefault();
-    setIsDragging(true);
-    dragStart.current = { x: e.clientX, y: e.clientY, wx: w.x, wy: w.y };
     handleFocus();
+    if (mobile || w.maximized) return;
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    e.preventDefault();
+    // Pointer capture keeps the drag alive outside the titlebar without
+    // registering global listeners.
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* capture is best-effort */
+    }
+    dragRef.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      originX: x.get(),
+      originY: y.get(),
+    };
+    dragTargetRef.current = { x: x.get(), y: y.get() };
+    frameRef.current?.classList.add("window-dragging");
   };
 
-  useEffect(() => {
-    if (!isDragging || mobile) return;
-    let rafId = 0;
-    const onPointerMove = (e: PointerEvent) => {
-      const dx = e.clientX - dragStart.current.x;
-      const dy = e.clientY - dragStart.current.y;
-      // Throttle state updates to one per animation frame to avoid
-      // re-rendering the whole desktop tree more often than the display refreshes
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(() => {
-        const maxX = Math.max(0, window.innerWidth - 80);
-        const maxY = Math.max(32, window.innerHeight - 80);
-        moveWindow(
-          w.id,
-          Math.min(maxX, Math.max(0, dragStart.current.wx + dx)),
-          Math.min(maxY, Math.max(32, dragStart.current.wy + dy))
-        );
-      });
-    };
-    const stopDragging = () => {
-      cancelAnimationFrame(rafId);
-      setIsDragging(false);
-    };
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", stopDragging);
-    window.addEventListener("pointercancel", stopDragging);
-    return () => {
-      cancelAnimationFrame(rafId);
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", stopDragging);
-      window.removeEventListener("pointercancel", stopDragging);
-    };
-  }, [isDragging, mobile, w.id, moveWindow]);
+  const onTitlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    const nextX = Math.min(
+      Math.max(0, drag.originX + e.clientX - drag.startX),
+      Math.max(0, window.innerWidth - 80)
+    );
+    const nextY = Math.min(
+      Math.max(32, drag.originY + e.clientY - drag.startY),
+      Math.max(32, window.innerHeight - 80)
+    );
+    dragTargetRef.current = { x: nextX, y: nextY };
+    // One motion-value write per frame; no React render until pointer-up.
+    if (dragRafRef.current) return;
+    dragRafRef.current = requestAnimationFrame(() => {
+      dragRafRef.current = 0;
+      x.set(dragTargetRef.current.x);
+      y.set(dragTargetRef.current.y);
+    });
+  };
 
-  const onResizePointerDown = (e: React.PointerEvent, dir: string) => {
+  const finishDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    dragRef.current = null;
+    if (dragRafRef.current) {
+      cancelAnimationFrame(dragRafRef.current);
+      dragRafRef.current = 0;
+    }
+    x.set(dragTargetRef.current.x);
+    y.set(dragTargetRef.current.y);
+    try {
+      e.currentTarget.releasePointerCapture(drag.pointerId);
+    } catch {
+      /* already released */
+    }
+    frameRef.current?.classList.remove("window-dragging");
+    // Single store commit per drag gesture.
+    moveWindow(w.id, Math.round(x.get()), Math.round(y.get()));
+  };
+
+  const onResizePointerDown = (e: React.PointerEvent<HTMLDivElement>, dir: string) => {
     if (!config.resizable || mobile) return;
     // Resizing with fingers on tiny handles is error-prone; mouse/pen only.
     if (e.pointerType === "touch") return;
     e.preventDefault();
     e.stopPropagation();
-    resizeStart.current = { x: e.clientX, y: e.clientY, width: w.width, height: w.height, dir };
 
+    const handle = e.currentTarget;
+    const start = { px: e.clientX, py: e.clientY, w: w.width, h: w.height, x: w.x, y: w.y, dir };
     let rafId = 0;
-    let pending = { width: w.width, height: w.height, x: w.x, y: w.y };
+    let pending: { x: number; y: number; width: number; height: number } | null = null;
 
-    const onPointerMove = (ev: PointerEvent) => {
-      const dx = ev.clientX - resizeStart.current.x;
-      const dy = ev.clientY - resizeStart.current.y;
-      let newW = resizeStart.current.width;
-      let newH = resizeStart.current.height;
-      let newX = w.x;
-      let newY = w.y;
+    try {
+      handle.setPointerCapture(e.pointerId);
+    } catch {
+      /* capture is best-effort */
+    }
+
+    const compute = (ev: PointerEvent) => {
+      const dx = ev.clientX - start.px;
+      const dy = ev.clientY - start.py;
+      let newW = start.w;
+      let newH = start.h;
+      let newX = start.x;
+      let newY = start.y;
       const maxW = Math.max(240, window.innerWidth - 16);
       const maxH = Math.max(200, window.innerHeight - WINDOW_TOP_MARGIN - WINDOW_BOTTOM_RESERVE);
 
-      if (resizeStart.current.dir.includes("e")) {
-        newW = Math.min(maxW, Math.max(config.minWidth, resizeStart.current.width + dx));
+      if (start.dir.includes("e")) {
+        newW = Math.min(maxW, Math.max(config.minWidth, start.w + dx));
       }
-      if (resizeStart.current.dir.includes("s")) {
-        newH = Math.min(maxH, Math.max(config.minHeight, resizeStart.current.height + dy));
+      if (start.dir.includes("s")) {
+        newH = Math.min(maxH, Math.max(config.minHeight, start.h + dy));
       }
-      if (resizeStart.current.dir.includes("w")) {
-        const proposed = resizeStart.current.width - dx;
+      if (start.dir.includes("w")) {
+        const proposed = start.w - dx;
         if (proposed >= config.minWidth) {
           newW = Math.min(maxW, proposed);
-          newX = Math.max(0, w.x + dx);
+          newX = Math.max(0, start.x + dx);
         }
       }
-      if (resizeStart.current.dir.includes("n")) {
-        const proposed = resizeStart.current.height - dy;
+      if (start.dir.includes("n")) {
+        const proposed = start.h - dy;
         if (proposed >= config.minHeight) {
           newH = Math.min(maxH, proposed);
-          newY = Math.max(WINDOW_TOP_MARGIN, w.y + dy);
+          newY = Math.max(WINDOW_TOP_MARGIN, start.y + dy);
         }
       }
-      pending = { width: newW, height: newH, x: newX, y: newY };
-      cancelAnimationFrame(rafId);
+      return { x: newX, y: newY, width: newW, height: newH };
+    };
+
+    const onPointerMove = (ev: PointerEvent) => {
+      pending = compute(ev);
+      if (rafId) return;
       rafId = requestAnimationFrame(() => {
-        resizeWindow(w.id, pending.width, pending.height);
-        if (resizeStart.current.dir.includes("w") || resizeStart.current.dir.includes("n")) {
-          moveWindow(w.id, pending.x, pending.y);
-        }
+        rafId = 0;
+        // One move+resize update per frame instead of two state writes.
+        if (pending) setWindowBounds(w.id, pending);
       });
     };
 
-    const onPointerUp = () => {
-      cancelAnimationFrame(rafId);
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", onPointerUp);
-      window.removeEventListener("pointercancel", onPointerUp);
+    const finish = (ev: PointerEvent) => {
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = 0;
+      }
+      if (pending) setWindowBounds(w.id, pending);
+      try {
+        handle.releasePointerCapture(ev.pointerId);
+      } catch {
+        /* already released */
+      }
+      handle.removeEventListener("pointermove", onPointerMove);
+      handle.removeEventListener("pointerup", finish);
+      handle.removeEventListener("pointercancel", finish);
     };
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerUp);
-    window.addEventListener("pointercancel", onPointerUp);
+
+    handle.addEventListener("pointermove", onPointerMove);
+    handle.addEventListener("pointerup", finish);
+    handle.addEventListener("pointercancel", finish);
   };
 
-  const displayStyle = w.maximized
-    ? { x: 0, y: 32, width: "100vw", height: "calc(100dvh - 32px)" }
-    : { x: w.x, y: w.y, width: w.width, height: w.height };
-
-  const springTransition = { type: "spring" as const, stiffness: 400, damping: 30, mass: 0.8 };
+  const maximized = w.maximized;
+  // Minimized windows stay mounted (so app state survives) but animate out.
+  const visible = !w.minimized && w.workspace === workspace;
 
   return (
-    <AnimatePresence>
-      {!w.minimized && w.workspace === workspace && (
-        <motion.div
-          ref={frameRef}
-          role={mobile ? "dialog" : "region"}
-          aria-modal={mobile ? true : undefined}
-          aria-label={w.title}
-          layout={!isDragging && !mobile}
-          initial={mobile ? { opacity: 0, y: 28 } : { opacity: 0, scale: 0.8 }}
-          animate={
-            mobile
-              ? { opacity: 1, y: 0 }
-              : {
-                  opacity: 1,
-                  scale: 1,
-                  x: displayStyle.x,
-                  y: displayStyle.y,
-                  width: displayStyle.width,
-                  height: displayStyle.height,
-                }
-          }
-          exit={mobile ? { opacity: 0, y: 24 } : { opacity: 0, scale: 0.9 }}
-          transition={
-            mobile
-              ? { type: "spring", stiffness: 340, damping: 34 }
-              : isDragging
-              ? { duration: 0 }
-              : springTransition
-          }
-          onClick={handleFocus}
-          onPointerDown={(e) => e.stopPropagation()}
-          className={cn(
-            "fixed z-10 overflow-hidden glass-window flex flex-col",
-            mobile
-              ? "mobile-app-window rounded-2xl ring-1 ring-white/15"
-              : "rounded-xl",
-            mobile && !isActiveMobile && "hidden",
-            !mobile && (w.focused ? "ring-1 ring-white/20" : "ring-1 ring-white/5")
-          )}
-          style={{
-            // Windows sit above desktop icons (z-100) and the quick-action
-            // widgets (z-150), but below the activities view / dock / panel.
-            zIndex: mobile ? 400 + w.zIndex : 200 + w.zIndex,
-            maxWidth: mobile || w.maximized ? undefined : "calc(100vw - 32px)",
-            maxHeight: mobile || w.maximized ? undefined : "calc(100dvh - 96px)",
-          }}
-        >
-          {mobile ? (
-            /* ---------- Mobile app header (touch friendly) ---------- */
-            <div className="h-12 shrink-0 flex items-center gap-1 px-1.5 window-titlebar" style={{ touchAction: "none" }}>
-              <button
-                onClick={handleClose}
-                className="h-11 w-11 shrink-0 rounded-lg flex items-center justify-center text-white/80 hover:bg-white/10 active:bg-white/20 transition-colors"
-                aria-label={`Close ${w.title}`}
-              >
-                <X className="w-5 h-5" aria-hidden="true" />
-              </button>
-              <div className="flex-1 min-w-0 px-1">
-                <p className="text-sm font-medium text-white/90 truncate leading-tight">{w.title}</p>
-                <p className="text-[10px] text-white/45 leading-tight">Ubuntu Portfolio</p>
-              </div>
-              <button
-                onClick={handleMinimize}
-                className="h-11 w-11 shrink-0 rounded-lg flex items-center justify-center text-white/80 hover:bg-white/10 active:bg-white/20 transition-colors"
-                aria-label={`Minimize ${w.title}`}
-              >
-                <ChevronDown className="w-5 h-5" aria-hidden="true" />
-              </button>
-            </div>
-          ) : (
-            /* ---------- Desktop title bar ---------- */
-            <div
-              className={`h-9 shrink-0 flex items-center justify-between px-3 cursor-default window-titlebar ${
-                w.focused ? "window-titlebar-active" : ""
-              }`}
-              onPointerDown={onTitlePointerDown}
-              onDoubleClick={() => !mobile && handleMaximize()}
-              style={{ touchAction: "none" }}
+    <motion.div
+      key={w.id}
+      ref={frameRef}
+      role={mobile ? "dialog" : "region"}
+      aria-modal={mobile ? true : undefined}
+      aria-label={w.title}
+      aria-hidden={!visible}
+      onClick={handleFocus}
+      onPointerDown={(e) => e.stopPropagation()}
+      className={cn(
+        // Outer layer only owns geometry; it never animates, so the
+        // entry/exit transition can run on the compositor.
+        "fixed flex",
+        mobile ? "mobile-app-window" : "",
+        !visible && "pointer-events-none",
+        mobile && !isActiveMobile && "hidden"
+      )}
+      style={{
+        ...(mobile
+          ? { zIndex: 400 + w.zIndex }
+          : {
+              x,
+              y,
+              width: maximized ? "100vw" : w.width,
+              height: maximized ? "calc(100dvh - 32px)" : w.height,
+              zIndex: 200 + w.zIndex,
+              maxWidth: maximized ? undefined : "calc(100vw - 32px)",
+              maxHeight: maximized ? undefined : "calc(100dvh - 96px)",
+            }),
+        // Keep minimized windows out of hit-testing and the accessibility
+        // tree once their fade-out has finished, without unmounting them.
+        visibility: visible ? "visible" : "hidden",
+        transition: visible ? undefined : "visibility 0s linear 0.2s",
+      }}
+    >
+      <motion.div
+        initial={mobile ? { opacity: 0, y: 24 } : { opacity: 0, scale: 0.97, y: 8 }}
+        animate={
+          visible
+            ? { opacity: 1, scale: 1, y: 0 }
+            : { opacity: 0, scale: mobile ? 1 : 0.97, y: mobile ? 24 : 8 }
+        }
+        exit={
+          mobile
+            ? { opacity: 0, y: 24, transition: { duration: 0.16, ease: "easeIn" } }
+            : { opacity: 0, scale: 0.97, y: 8, transition: { duration: 0.16, ease: "easeIn" } }
+        }
+        transition={mobile ? { type: "spring", stiffness: 340, damping: 34 } : WINDOW_TRANSITION}
+        className={cn(
+          "glass-window flex h-full w-full flex-col overflow-hidden",
+          mobile
+            ? "rounded-2xl ring-1 ring-white/15"
+            : cn("rounded-xl", w.focused ? "ring-1 ring-white/20" : "ring-1 ring-white/5")
+        )}
+      >
+        {mobile ? (
+          /* ---------- Mobile app header (touch friendly) ---------- */
+          <div
+            className="h-12 shrink-0 flex items-center gap-1 px-1.5 window-titlebar"
+            style={{ touchAction: "none" }}
+          >
+            <button
+              onClick={handleClose}
+              className="h-11 w-11 shrink-0 rounded-lg flex items-center justify-center text-white/80 hover:bg-white/10 active:bg-white/20 transition-colors"
+              aria-label={`Close ${w.title}`}
             >
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="flex gap-1.5 shrink-0">
-                  <button
-                    onClick={handleClose}
-                    className="group/dot h-6 w-6 -m-1.5 flex items-center justify-center rounded-full"
-                    aria-label="Close window"
-                  >
-                    <span className="w-3 h-3 rounded-full bg-[#ff5f57] group-hover/dot:bg-[#ff5f57]/80 transition-colors" />
-                  </button>
-                  <button
-                    onClick={handleMinimize}
-                    className="group/dot h-6 w-6 -m-1.5 flex items-center justify-center rounded-full"
-                    aria-label="Minimize window"
-                  >
-                    <span className="w-3 h-3 rounded-full bg-[#febc2e] group-hover/dot:bg-[#febc2e]/80 transition-colors" />
-                  </button>
-                  <button
-                    onClick={handleMaximize}
-                    className="group/dot h-6 w-6 -m-1.5 flex items-center justify-center rounded-full"
-                    aria-label={w.maximized ? "Restore window" : "Maximize window"}
-                  >
-                    <span className="w-3 h-3 rounded-full bg-[#28c840] group-hover/dot:bg-[#28c840]/80 transition-colors" />
-                  </button>
-                </div>
-                <span className="text-white/90 text-sm font-medium ml-2 select-none truncate">{w.title}</span>
+              <X className="w-5 h-5" aria-hidden="true" />
+            </button>
+            <div className="flex min-w-0 flex-1 items-center gap-2 px-1">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-white/10 bg-white/10">
+                <AppIcon name={config.icon} className="h-4 w-4 text-white/85" />
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium leading-tight text-white/90">{w.title}</p>
+                <p className="text-[10px] leading-tight text-white/45">Ubuntu Portfolio</p>
               </div>
-              <div className="flex items-center gap-0.5 shrink-0">
+            </div>
+            <button
+              onClick={handleMinimize}
+              className="h-11 w-11 shrink-0 rounded-lg flex items-center justify-center text-white/80 hover:bg-white/10 active:bg-white/20 transition-colors"
+              aria-label={`Minimize ${w.title}`}
+            >
+              <ChevronDown className="w-5 h-5" aria-hidden="true" />
+            </button>
+          </div>
+        ) : (
+          /* ---------- Desktop title bar ---------- */
+          <div
+            className={`h-9 shrink-0 flex items-center justify-between px-3 cursor-default window-titlebar ${
+              w.focused ? "window-titlebar-active" : ""
+            }`}
+            onPointerDown={onTitlePointerDown}
+            onPointerMove={onTitlePointerMove}
+            onPointerUp={finishDrag}
+            onPointerCancel={finishDrag}
+            onDoubleClick={() => !mobile && handleMaximize()}
+            style={{ touchAction: "none" }}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="flex gap-1.5 shrink-0">
+                <button
+                  onClick={handleClose}
+                  className="group/dot h-6 w-6 -m-1.5 flex items-center justify-center rounded-full"
+                  aria-label="Close window"
+                >
+                  <span className="w-3 h-3 rounded-full bg-[#ff5f57] group-hover/dot:bg-[#ff5f57]/80 transition-colors" />
+                </button>
                 <button
                   onClick={handleMinimize}
-                  className="p-1.5 md:p-2 rounded hover:bg-white/10 text-white/70 transition-colors"
-                  aria-label="Minimize"
+                  className="group/dot h-6 w-6 -m-1.5 flex items-center justify-center rounded-full"
+                  aria-label="Minimize window"
                 >
-                  <Minus className="w-4 h-4" aria-hidden="true" />
+                  <span className="w-3 h-3 rounded-full bg-[#febc2e] group-hover/dot:bg-[#febc2e]/80 transition-colors" />
                 </button>
                 <button
                   onClick={handleMaximize}
-                  className="p-1.5 md:p-2 rounded hover:bg-white/10 text-white/70 transition-colors"
-                  aria-label={w.maximized ? "Restore" : "Maximize"}
+                  className="group/dot h-6 w-6 -m-1.5 flex items-center justify-center rounded-full"
+                  aria-label={w.maximized ? "Restore window" : "Maximize window"}
                 >
-                  {w.maximized ? (
-                    <Maximize2 className="w-4 h-4" aria-hidden="true" />
-                  ) : (
-                    <Square className="w-4 h-4" aria-hidden="true" />
-                  )}
-                </button>
-                <button
-                  onClick={handleClose}
-                  className="p-1.5 md:p-2 rounded hover:bg-[#ff5f57]/80 text-white/70 hover:text-white transition-colors"
-                  aria-label="Close"
-                >
-                  <X className="w-4 h-4" aria-hidden="true" />
+                  <span className="w-3 h-3 rounded-full bg-[#28c840] group-hover/dot:bg-[#28c840]/80 transition-colors" />
                 </button>
               </div>
+              <span className="ml-2 flex items-center gap-2 min-w-0">
+                <AppIcon name={config.icon} className="h-3.5 w-3.5 shrink-0 text-white/60" />
+                <span className="truncate text-sm font-medium text-white/90 select-none">{w.title}</span>
+              </span>
             </div>
-          )}
-
-          {/* Content */}
-          <div className="flex-1 min-h-0 overflow-hidden relative" style={{ background: config.color }}>
-            {children}
+            <div className="flex items-center gap-0.5 shrink-0">
+              <button
+                onClick={handleMinimize}
+                className="p-1.5 md:p-2 rounded hover:bg-white/10 text-white/70 transition-colors"
+                aria-label="Minimize"
+              >
+                <Minus className="w-4 h-4" aria-hidden="true" />
+              </button>
+              <button
+                onClick={handleMaximize}
+                className="p-1.5 md:p-2 rounded hover:bg-white/10 text-white/70 transition-colors"
+                aria-label={w.maximized ? "Restore" : "Maximize"}
+              >
+                {w.maximized ? (
+                  <Maximize2 className="w-4 h-4" aria-hidden="true" />
+                ) : (
+                  <Square className="w-4 h-4" aria-hidden="true" />
+                )}
+              </button>
+              <button
+                onClick={handleClose}
+                className="p-1.5 md:p-2 rounded hover:bg-[#ff5f57]/80 text-white/70 hover:text-white transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" aria-hidden="true" />
+              </button>
+            </div>
           </div>
+        )}
 
-          {/* Resize handles (precise pointers only) */}
-          {!mobile && config.resizable && !w.maximized &&
-            resizeHandles.map((h) => (
-              <div
-                key={h.dir}
-                className={`window-resize-handle absolute ${h.class} z-50`}
-                style={{ cursor: h.cursor }}
-                onPointerDown={(e) => onResizePointerDown(e, h.dir)}
-              />
-            ))}
-        </motion.div>
-      )}
-    </AnimatePresence>
+        {/* Content */}
+        <div className="flex-1 min-h-0 overflow-hidden relative" style={{ background: config.color }}>
+          {children}
+        </div>
+
+        {/* Resize handles (precise pointers only) */}
+        {!mobile && config.resizable && !w.maximized &&
+          resizeHandles.map((h) => (
+            <div
+              key={h.dir}
+              className={`window-resize-handle absolute ${h.class} z-50`}
+              style={{ cursor: h.cursor }}
+              onPointerDown={(e) => onResizePointerDown(e, h.dir)}
+            />
+          ))}
+      </motion.div>
+    </motion.div>
   );
 }

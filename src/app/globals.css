@@ -92,12 +92,24 @@
   --yaru-blue: #19b6ee;
   --yaru-grey: #aea79f;
   --yaru-dark: #1e1e1e;
-  --yaru-panel: rgba(28, 28, 28, 0.82);
-  --yaru-dock: rgba(40, 40, 40, 0.78);
-  --yaru-window: rgba(46, 46, 46, 0.96);
+  --yaru-panel: rgba(26, 8, 22, 0.72);
+  --yaru-dock: rgba(40, 14, 32, 0.62);
+  --yaru-window: rgba(38, 12, 32, 0.74);
   --yaru-title: #3e3e3e;
   --yaru-terminal: #300a24;
   --yaru-vscode: #1e1e2e;
+
+  /* Liquid-glass surface system */
+  --glass-surface: linear-gradient(
+    155deg,
+    rgba(94, 39, 80, 0.42) 0%,
+    rgba(46, 12, 38, 0.5) 55%,
+    rgba(28, 6, 24, 0.56) 100%
+  );
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  --glass-shadow: 0 24px 60px -18px rgba(0, 0, 0, 0.65), 0 2px 8px rgba(0, 0, 0, 0.28);
+  --glass-blur: 24px;
 
   /* Responsive shell metrics */
   --statusbar-h: 32px;
@@ -167,36 +179,83 @@
 }
 
 @layer utilities {
+  /* ---------- Liquid glass system ---------- */
+  .glass,
+  .glass-card,
+  .glass-window,
+  .glass-dock,
   .glass-panel {
-    background: var(--yaru-panel);
-    backdrop-filter: blur(20px) saturate(1.6);
-    -webkit-backdrop-filter: blur(20px) saturate(1.6);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--glass-surface);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow), var(--glass-highlight);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+    backdrop-filter: blur(var(--glass-blur)) saturate(150%);
   }
+
+  .glass-card {
+    border-radius: 1.25rem;
+  }
+
+  /* Compact translucent row used inside glass cards (quick actions etc.) */
+  .glass-inset {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+
+  .glass-panel {
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+  }
+
   .glass-dock {
-    background: var(--yaru-dock);
-    backdrop-filter: blur(24px) saturate(1.8);
-    -webkit-backdrop-filter: blur(24px) saturate(1.8);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: linear-gradient(
+      180deg,
+      rgba(74, 28, 62, 0.55) 0%,
+      rgba(34, 9, 28, 0.68) 100%
+    );
   }
+
   .glass-window {
     background: var(--yaru-window);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+    /* Blur lives on the titlebar strip only: the content panel is opaque, and
+       a full-window backdrop-filter is re-sampled on every frame while the
+       window moves. */
+    box-shadow: 0 32px 80px -20px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+      0 1px 0 rgba(255, 255, 255, 0.12) inset;
   }
+
   .ubuntu-wallpaper {
-    background:
-      radial-gradient(circle at 20% 30%, rgba(233, 84, 32, 0.25) 0%, transparent 40%),
-      radial-gradient(circle at 80% 70%, rgba(94, 39, 80, 0.35) 0%, transparent 45%),
-      radial-gradient(circle at 50% 50%, rgba(44, 0, 30, 0.6) 0%, transparent 60%),
-      linear-gradient(135deg, #2c001e 0%, #1a0510 50%, #0d0208 100%);
+    background-color: #1a0510;
+    background-image: url("/assets/ubuntu-portfolio-wallpaper.png");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
   }
+
   .window-titlebar {
-    background: linear-gradient(180deg, rgba(62, 62, 62, 0.98) 0%, rgba(46, 46, 46, 0.98) 100%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    backdrop-filter: blur(16px) saturate(150%);
+    background: linear-gradient(
+      180deg,
+      rgba(64, 24, 52, 0.92) 0%,
+      rgba(40, 12, 33, 0.94) 100%
+    );
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   }
   .window-titlebar-active {
-    background: linear-gradient(180deg, rgba(70, 70, 70, 0.98) 0%, rgba(52, 52, 52, 0.98) 100%);
+    background: linear-gradient(
+      180deg,
+      rgba(82, 33, 67, 0.94) 0%,
+      rgba(48, 15, 40, 0.96) 100%
+    );
+  }
+
+  /* Compositor hint, applied only while a window is being dragged. */
+  .window-dragging {
+    will-change: transform;
   }
   .terminal-text {
     font-family: "Ubuntu Mono", "DejaVu Sans Mono", "Fira Code", monospace;
@@ -246,6 +305,47 @@
   .mask-fade-y {
     -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
     mask-image: linear-gradient(to bottom, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
+  }
+}
+
+/* Graceful fallback when the browser cannot blur surfaces */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass,
+  .glass-card,
+  .glass-window,
+  .glass-dock,
+  .glass-panel {
+    background: rgba(34, 10, 28, 0.95);
+  }
+  .glass-inset {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Short desktop viewports (phone landscape, small laptops): compact the
+   stage so the hero is never clipped above the dock. */
+@media (max-height: 580px) and (min-width: 768px) {
+  .desktop-stage {
+    align-items: center;
+    padding-top: 2.75rem;
+    padding-bottom: 5.25rem;
+  }
+  .desktop-widgets {
+    display: none;
+  }
+  .desktop-hero-title {
+    margin-top: 0.6rem;
+    font-size: 2.5rem;
+    line-height: 0.95;
+  }
+  .desktop-hero-tagline {
+    margin-top: 0.65rem;
+  }
+  .desktop-hero-desc {
+    display: none;
+  }
+  .desktop-hero-actions {
+    margin-top: 1rem;
   }
 }
 
