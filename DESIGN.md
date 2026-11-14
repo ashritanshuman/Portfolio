@@ -85,7 +85,7 @@ The portfolio abandons the traditional vertical-scrolling website in favor of a 
 
 The home screen is a layered composition rather than a single canvas:
 
-1. **Wallpaper layer** – the original asset from `public/assets/ubuntu-portfolio-wallpaper.png`, applied with `cover` / `center` / `no-repeat`.
+1. **Wallpaper layer** – the monochrome `updates-wallpaper` artwork from `public/assets/updates-wallpaper.webp` (1672×941, 49 KB), applied with `cover` / `center` / `no-repeat` by static CSS; viewports below 768px get a pre-cropped portrait variant (`updates-wallpaper-mobile.webp`, 434×941, 22 KB). The CSS background colour `#0d0f11` is the fallback until the image arrives.
 2. **Desktop backdrop** – left app shortcuts, the hero section, and three information widgets (Education, Quick Access, Now Building). The whole backdrop is blurred and dimmed from live window state.
 3. **Window layer** – floating windows rendered above the backdrop, never inside the blurred element, so window content stays sharp.
 4. **Shell layer** – top panel and dock, always sharp and interactive.
@@ -178,7 +178,7 @@ A mutable `zIndexRef` starts at 10 and increments each time a window is focused.
 3. **Minimize**: The window stays mounted (terminal history, scroll position and folder state survive) and animates to `opacity: 0` / `scale 0.97`; `visibility: hidden` flips after the animation, so it leaves hit-testing and the accessibility tree without a remount.
 4. **Maximize**: Snaps to full viewport dimensions (native feel — no geometry animation).
 5. **Restore**: Returns to the stored position and size (still centred if it was never dragged).
-6. **Close**: One shared `AnimatePresence` in `Desktop` owns presence. The frame keeps its final geometry and runs an `opacity`/`scale` exit, which also propagates to the app subtree, so the window is painted while it leaves instead of vanishing.
+6. **Close**: state-driven — no `AnimatePresence`. `closeWindow` marks the window `closing: true` (focus moves to the next top window immediately), the CSS `window-surface--hidden` transition fades the surface out over 200ms while the frame keeps its final geometry, and a `setTimeout(WINDOW_EXIT_MS + 30)` unmounts it. The window stays mounted and painted for the whole exit; `restoreWindow` cancels an in-flight close, and minimized/closing windows are excluded from the visible set but kept mounted.
 
 ### Window Interaction Performance
 
@@ -461,10 +461,12 @@ All motion is purpose-driven:
 
 ### Wallpaper
 
-The background is generated with layered CSS gradients and radial overlays to mimic an abstract Ubuntu Yaru wallpaper:
-- Aubergine/purple base gradient.
-- Orange and purple radial glows.
-- Dark vignette.
+The background is the monochrome `updates-wallpaper` artwork (low-poly lynx over contour waves on dark charcoal), delivered entirely by static CSS — no JavaScript is involved in loading it:
+
+- **Variants**: `updates-wallpaper.webp` (1672×941, 49 KB) for ≥768px viewports and `updates-wallpaper-mobile.webp` (434×941 portrait crop centred on the lynx, 22 KB) for <768px. Both are WebP conversions of the original `updates-wallpaper.png` (1.7 MB), which stays in `public/assets/` as the source and is never served.
+- **Static CSS delivery**: `.ubuntu-wallpaper` in `globals.css` sets `background-image`, `background-color: #0d0f11`, `cover` and `no-repeat`, with a `max-width: 767px` media query swapping in the mobile variant. Because the rule lives in the render-blocking stylesheet and the element is server-rendered, it applies before hydration — no `useEffect`, no dynamic import, no lazy loading, no artificial delay.
+- **Media-gated preload**: `PreloadWallpaper` (rendered in `layout.tsx`) emits two `ReactDOM.preload` hints with `fetchPriority: "high"` and mutually exclusive `media` queries (`(min-width: 768px)` / `(max-width: 767px)`), so exactly one variant is fetched per viewport and the download starts while the HTML is still parsing. The CSS media query and the preload gate always agree, so there is never a duplicate request.
+- **Caching**: `public/_headers` (mirrored in `vercel.json`) serve `/assets/*` with `Cache-Control: public, max-age=2592000, stale-while-revalidate=604800`. Assets are plain static files — no runtime image transforms and no image-processing dependency.
 
 ### Glassmorphism
 
@@ -524,7 +526,8 @@ Sound can be toggled off from the top panel or the Settings app. Audio is best-e
 ## 11. Performance
 
 - **Static export**: Pre-rendered HTML/JS/CSS in `dist/`.
-- **CSS-only wallpaper**: No heavy image assets.
+- **Optimised wallpaper**: the 1.7 MB source PNG ships as a 49 KB desktop WebP and a 22 KB mobile WebP. It is preloaded with media gates and painted from render-blocking CSS, so the download starts during HTML parse (measured: start 18 ms, done 6 ms locally — before FCP 140 ms; on a 375 ms / 400 kbit/s link it starts at 441 ms and finishes before first paint), CLS 0, exactly one request per viewport, warm cache 0 bytes.
+- **Long-lived caching**: `public/_headers` + `vercel.json` give `/assets/*` a 30-day `max-age` with `stale-while-revalidate`, so repeat visits re-use the cached wallpaper instead of re-downloading it.
 - **SVG icons**: Lucide icons and inline SVGs scale cleanly.
 - **Lazy window content**: Windows are conditionally rendered based on state; minimized windows are unmounted from the visible tree.
 - **Spring physics**: GPU-accelerated transforms and opacity changes.
