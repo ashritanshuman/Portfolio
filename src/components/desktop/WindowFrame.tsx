@@ -32,9 +32,6 @@ const resizeHandles = [
   { dir: "sw", cursor: "sw-resize", class: "bottom-0 left-0 w-4 h-4" },
 ];
 
-/** Window surface entry/exit timing, mirrored by the CSS keyframes. */
-const WINDOW_EXIT_MS = 200;
-
 export function WindowFrame({
   window: w,
   children,
@@ -257,9 +254,9 @@ export function WindowFrame({
   };
 
   const maximized = w.maximized;
-  // Minimized and closing windows stay mounted (so app state survives
-  // minimize, and the exit animation plays during close) but animate out.
-  const visible = !w.minimized && w.workspace === workspace;
+  // Minimized and closing windows stay mounted (so app state survives a
+  // minimize, and the exit transition can play on close) but animate out.
+  const visible = !w.minimized && !w.closing && w.workspace === workspace;
 
   return (
     <motion.div
@@ -291,10 +288,13 @@ export function WindowFrame({
               maxWidth: maximized ? undefined : "calc(100vw - 32px)",
               maxHeight: maximized ? undefined : "calc(100dvh - 96px)",
             }),
-        // Keep minimized windows out of hit-testing and the accessibility
-        // tree once their fade-out has finished, without unmounting them.
-        visibility: visible ? "visible" : "hidden",
-        transition: visible ? undefined : "visibility 0s linear 0.2s",
+        // Minimized windows stay mounted but leave hit-testing and the
+        // accessibility tree once their fade-out has finished. Closing windows
+        // keep their geometry visible until the exit transition ends, at which
+        // point they are unmounted.
+        visibility: w.minimized && !w.closing ? "hidden" : "visible",
+        transition:
+          w.minimized && !w.closing ? "visibility 0s linear 0.2s" : undefined,
       }}
     >
       <div

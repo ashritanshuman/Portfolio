@@ -1,1 +1,0 @@
-(globalThis.TURBOPACK||(globalThis.TURBOPACK=[])).push(["object"==typeof document?document.currentScript:void 0,31617,e=>{"use strict";var t=e.i(14476);e.s(["PreloadWallpaper",0,function(){return t.default.preload("/assets/updates-wallpaper.webp",{as:"image",fetchPriority:"high"}),null}])}]);

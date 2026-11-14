@@ -45,7 +45,7 @@ export function Desktop() {
 
   // On phones only the top-most window is shown; the rest stay mounted so
   // their state (terminal history, open folder, …) survives app switching.
-  const visibleWindows = windows.filter((w) => !w.minimized && w.workspace === workspace);
+  const visibleWindows = windows.filter((w) => !w.minimized && !w.closing && w.workspace === workspace);
   const topMobileWindowId = [...visibleWindows].sort((a, b) => b.zIndex - a.zIndex)[0]?.id;
 
   // The desktop backdrop is blurred from real window state: any visible
@@ -115,16 +115,16 @@ export function Desktop() {
         />
 
         {/* ---------- Windows ---------- */}
-        <AnimatePresence>
-          {windows.map((w) => (
-            <WindowHost
-              key={w.id}
-              w={w}
-              mobile={isMobile}
-              isActiveMobile={w.id === topMobileWindowId}
-            />
-          ))}
-        </AnimatePresence>
+        {/* Close is state-driven (the window is marked `closing`, plays its
+            exit transition, then unmounts), so no AnimatePresence is needed. */}
+        {windows.map((w) => (
+          <WindowHost
+            key={w.id}
+            w={w}
+            mobile={isMobile}
+            isActiveMobile={w.id === topMobileWindowId}
+          />
+        ))}
 
         <MobileHome hidden={isMobile && !!topMobileWindowId} />
 

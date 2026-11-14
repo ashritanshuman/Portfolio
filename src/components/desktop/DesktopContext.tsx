@@ -51,6 +51,13 @@ const WORKSPACE_COUNT = 2;
 export const WINDOW_TOP_MARGIN = 40;
 export const WINDOW_BOTTOM_RESERVE = 96;
 
+/**
+ * Length of the window exit transition (mirrors `.window-surface` in
+ * globals.css). Close keeps the window mounted for this long so the fade-out
+ * can play, then unmounts it.
+ */
+export const WINDOW_EXIT_MS = 200;
+
 function clampSize(width: number, height: number, minWidth: number, minHeight: number) {
   if (typeof window === "undefined") return { width, height };
   const maxW = Math.max(240, window.innerWidth - 32);
@@ -85,13 +92,24 @@ export function DesktopProvider({ children }: { children: React.ReactNode }) {
   const [activitiesOpen, setActivitiesOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const zIndexRef = useRef(10);
+  const closeTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
   const getAppConfig = useCallback((appId: AppId) => APPS[appId] ?? APPS.about, []);
+
+  // Cancel any in-flight close timers if the provider unmounts.
+  useEffect(() => {
+    const timers = closeTimersRef.current;
+    return () => {
+      for (const t of timers.values()) clearTimeout(t);
+      timers.clear();
+    };
+  }, []);
 
   const focusWindow = useCallback((id: string) => {
     setWindows((prev) => {
       const target = prev.find((w) => w.id === id);
-      if (!target || target.minimized) return prev;
+      // A closing window is already leaving; never raise it.
+      if (!target || target.minimized || target.closing) return prev;
       // Already focused and on top: nothing to re-render.
       const topZ = prev.reduce((max, w) => Math.max(max, w.zIndex), 0);
       if (target.focused && target.zIndex === topZ) return prev;
@@ -171,6 +189,7 @@ export function DesktopProvider({ children }: { children: React.ReactNode }) {
 
     // Phase 2: unmount once the exit transition has finished.
     const timer = setTimeout(() => {
+      closeTimersRef.current.delete(id);
       setWindows((prev) => prev.filter((w) => w.id !== id));
     }, WINDOW_EXIT_MS + 30);
 
@@ -212,6 +231,33 @@ export function DesktopProvider({ children }: { children: React.ReactNode }) {
   }, [focusWindow]);
 
   const restoreWindow = useCallback((id: string, options?: { workspace?: number }) => {
+    // Restoring a window that is mid-close cancels the close instead of
+    // letting it vanish under the pointer.
+    const pending = closeTimersRef.current.get(id);
+    if (pending) {
+      clearTimeout(pending);
+      closeTimersRef.current.delete(id);
+      zIndexRef.current += 1;
+      const nextZ = zIndexRef.current;
+      setWindows((prev) =>
+        prev.map((w) =>
+          w.id === id
+            ? {
+                ...w,
+                closing: false,
+                minimized: false,
+                focused: true,
+                zIndex: nextZ,
+                workspace: options?.workspace ?? w.workspace,
+              }
+            : w.focused
+              ? { ...w, focused: false }
+              : w
+        )
+      );
+      setActiveWindowId(id);
+      return;
+    }
     // Restoring should raise the window above the others and keep its
     // maximized state so a minimized-maximized window comes back intact.
     zIndexRef.current += 1;
